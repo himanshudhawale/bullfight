@@ -1174,10 +1174,9 @@ const $ = StyleSheet.create({
 
   /* ═══ ZONE 2: Player Profile Card ═══ */
   profileCardZone: {
-    flex: 1,
     justifyContent: 'flex-start',
-    paddingTop: hp(24),
-    paddingBottom: hp(10),
+    paddingTop: hp(12),
+    paddingBottom: hp(6),
   },
   profileCard: {
     borderRadius: 20,
@@ -1192,7 +1191,7 @@ const $ = StyleSheet.create({
   } as any,
   profileCardGrad: {
     borderRadius: 18,
-    padding: wp(16),
+    padding: wp(12),
     overflow: 'hidden',
   },
   profileInnerShadow: {
@@ -1216,9 +1215,9 @@ const $ = StyleSheet.create({
     paddingLeft: wp(4),
   } as any,
   profileAvatarWrap: {
-    width: wp(80),
-    height: wp(80),
-    borderRadius: wp(40),
+    width: wp(64),
+    height: wp(64),
+    borderRadius: wp(32),
     overflow: 'visible',
     ...Platform.select({
       ios: { shadowColor: 'rgba(155,92,255,0.5)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 14 },
@@ -1227,7 +1226,7 @@ const $ = StyleSheet.create({
   } as any,
   profileAvatarGrad: {
     flex: 1,
-    borderRadius: wp(40),
+    borderRadius: wp(32),
     alignItems: 'center',
     justifyContent: 'center',
     padding: 3,
@@ -1235,7 +1234,7 @@ const $ = StyleSheet.create({
   profileAvatarInner: {
     flex: 1,
     width: '100%',
-    borderRadius: wp(38),
+    borderRadius: wp(30),
     backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1391,8 +1390,8 @@ const $ = StyleSheet.create({
 
   /* VIP Progress Bar */
   vipProgressWrap: {
-    marginTop: hp(12),
-    paddingTop: hp(10),
+    marginTop: hp(8),
+    paddingTop: hp(6),
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.06)',
   },
@@ -1400,7 +1399,7 @@ const $ = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: hp(6),
+    marginBottom: hp(4),
   } as any,
   vipProgressLabel: {
     fontSize: fs(11),
@@ -1426,7 +1425,7 @@ const $ = StyleSheet.create({
 
   /* ═══ ZONE 3: Bottom Nav Icons ═══ */
   bottomZone: {
-    paddingBottom: hp(20),
+    paddingBottom: hp(12),
   },
   bottomNav: {
     flexDirection: 'row',
