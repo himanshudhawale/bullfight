@@ -31,8 +31,8 @@ import {
 } from '../../theme';
 import { useAuthStore } from '../../stores/authStore';
 import { api } from '../../services/api';
-import PremiumIcon from '../../components/PremiumIcon';
-import { getVipConfig, VIP_LEVELS, VipLevel } from '../../../../shared/types';
+
+import { getVipConfig, VipLevel } from '../../../../shared/types';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -413,58 +413,25 @@ function GameTile({ onPress, gradColors, gradLocations, style, children }: {
 }
 
 // ---------------------------------------------------------------------------
-// NavIcon — premium 3D icon button with glow states
+// Quick Access shortcut data
 // ---------------------------------------------------------------------------
-const NAV_ITEMS = [
-  { key: 'settings', asset: A.iconSettings, label: 'SETTINGS', screen: 'Settings' },
-  { key: 'friends', asset: A.iconFriends, label: 'FRIENDS', screen: 'Friends' },
-  { key: 'store', asset: A.iconStore, label: 'STORE', screen: 'Store', accent: true },
-  { key: 'profile', asset: A.iconProfile, label: 'PROFILE', screen: 'Profile' },
+const QUICK_ACCESS = [
+  { key: 'tournament', emoji: '🏆', label: 'Tourney', screen: 'Tournaments' },
+  { key: 'private', emoji: '🏠', label: 'Private', screen: 'PrivateRooms' },
+  { key: 'bonus', emoji: '🎁', label: 'Bonus', screen: 'Friends' },
+  { key: 'leaderboard', emoji: '📊', label: 'Ranks', screen: null },
 ] as const;
 
-function NavIconBtn({ asset, label, accent, onPress }: {
-  asset: any; label: string; accent?: boolean; onPress: () => void;
-}) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(accent ? 0.45 : 0.25)).current;
-
-  useEffect(() => {
-    const base = accent ? 0.45 : 0.25;
-    const peak = accent ? 0.7 : 0.45;
-    const loop = Animated.loop(Animated.sequence([
-      Animated.timing(glowAnim, { toValue: peak, duration: 2200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      Animated.timing(glowAnim, { toValue: base, duration: 2200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-    ]));
-    loop.start();
-    return () => loop.stop();
-  }, []);
-
-  const pressIn = () => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1.05, speed: 50, bounciness: 6, useNativeDriver: true }),
-      Animated.timing(glowAnim, { toValue: accent ? 0.9 : 0.7, duration: 100, useNativeDriver: true }),
-    ]).start();
-  };
-  const pressOut = () => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, friction: 5, tension: 50, useNativeDriver: true }),
-      Animated.timing(glowAnim, { toValue: accent ? 0.45 : 0.25, duration: 300, useNativeDriver: true }),
-    ]).start();
-  };
-
-  const glowColor = accent ? '#D4AF37' : 'rgba(212,175,55,0.6)';
-
-  return (
-    <Pressable onPress={onPress} onPressIn={pressIn} onPressOut={pressOut} style={$.navIconWrap}>
-      <Animated.View style={[$.navIconBtn, accent && $.navIconAccent, { transform: [{ scale }] }]}>
-        <Animated.View style={[$.navIconGlow, { opacity: glowAnim, shadowColor: glowColor }]} pointerEvents="none" />
-        <Image source={asset} style={$.navIconImg} resizeMode="contain" />
-        <Animated.View style={[$.navIconRing, { opacity: scale.interpolate({ inputRange: [1, 1.05], outputRange: [0, 1], extrapolate: 'clamp' }) }]} pointerEvents="none" />
-      </Animated.View>
-      <Text style={$.navIconLabel}>{label}</Text>
-    </Pressable>
-  );
-}
+// ---------------------------------------------------------------------------
+// Bottom Tab Bar data
+// ---------------------------------------------------------------------------
+const TAB_ITEMS = [
+  { key: 'play', emoji: '🎮', label: 'Play', screen: null, active: true },
+  { key: 'social', emoji: '👥', label: 'Social', screen: 'Friends' },
+  { key: 'shop', emoji: '🛒', label: 'Shop', screen: 'Store' },
+  { key: 'club', emoji: '🏛️', label: 'Club', screen: 'Clubs' },
+  { key: 'more', emoji: '☰', label: 'More', screen: 'Profile' },
+] as const;
 
 // ---------------------------------------------------------------------------
 // Main
@@ -537,35 +504,8 @@ export default function LobbyScreen() {
     ])).start();
   }, []);
 
-  // Pulsing glow for main CTA
-  const ctaGlow = useRef(new Animated.Value(0.3)).current;
-  // Light sweep across button
-  const ctaSweep = useRef(new Animated.Value(-1)).current;
-  // Gradient color shift
-  const ctaShift = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    // Glow pulse
-    Animated.loop(Animated.sequence([
-      Animated.timing(ctaGlow, { toValue: 0.55, duration: 1800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      Animated.timing(ctaGlow, { toValue: 0.2, duration: 1800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-    ])).start();
-
-    // Light sweep every 4 seconds
-    Animated.loop(Animated.sequence([
-      Animated.delay(3500),
-      Animated.timing(ctaSweep, { toValue: 2, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      Animated.timing(ctaSweep, { toValue: -1, duration: 0, useNativeDriver: true }),
-    ])).start();
-
-    // Soft gradient shift
-    Animated.loop(Animated.sequence([
-      Animated.timing(ctaShift, { toValue: 1, duration: 3000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      Animated.timing(ctaShift, { toValue: 0, duration: 3000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-    ])).start();
-  }, []);
-
-  // Pulsing scale for the (+) button
+  // Pulsing scale for the (+) add chips button
   const plusPulse = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     Animated.loop(Animated.sequence([
@@ -574,28 +514,15 @@ export default function LobbyScreen() {
     ])).start();
   }, []);
 
-  // Press scale for main button
-  const scaleHero = useRef(new Animated.Value(1)).current;
-  const heroIn = () => Animated.spring(scaleHero, { toValue: 0.96, useNativeDriver: true }).start();
-  const heroOut = () => Animated.spring(scaleHero, { toValue: 1, friction: 4, useNativeDriver: true }).start();
 
-  const winRate = user && user.gamesPlayed > 0 ? Math.round((user.gamesWon / user.gamesPlayed) * 100) : 0;
 
-  // VIP progress
+  // VIP config for top bar
   const vipLevel = (user?.vipLevel || 1) as VipLevel;
-  const vipXp = (user as any)?.vipXp ?? 0;
   const currentVipCfg = getVipConfig(vipLevel);
-  const nextVipIdx = VIP_LEVELS.findIndex(c => c.level === vipLevel) + 1;
-  const nextVipCfg = nextVipIdx < VIP_LEVELS.length ? VIP_LEVELS[nextVipIdx] : null;
-  const vipXpInLevel = vipXp - currentVipCfg.xpRequired;
-  const vipXpNeeded = nextVipCfg ? nextVipCfg.xpRequired - currentVipCfg.xpRequired : 1;
-  const vipProgress = nextVipCfg ? Math.min(1, Math.max(0, vipXpInLevel / vipXpNeeded)) : 1;
 
-  // ── Task 2: Live activity tickers ──
+  // ── Live activity tickers (for bull tile) ──
   const [livePlayers, setLivePlayers] = useState(247);
-  const [activePot, setActivePot] = useState(125.4);
   const playerTickScale = useRef(new Animated.Value(1)).current;
-  const potTickScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const playerInterval = setInterval(() => {
@@ -606,18 +533,7 @@ export default function LobbyScreen() {
       ]).start();
     }, 3500);
 
-    const potInterval = setInterval(() => {
-      setActivePot(Math.round((45 + Math.random() * 135) * 10) / 10);
-      Animated.sequence([
-        Animated.spring(potTickScale, { toValue: 1.15, useNativeDriver: true }),
-        Animated.spring(potTickScale, { toValue: 1, friction: 5, useNativeDriver: true }),
-      ]).start();
-    }, 4000);
-
-    return () => {
-      clearInterval(playerInterval);
-      clearInterval(potInterval);
-    };
+    return () => clearInterval(playerInterval);
   }, []);
 
   return (
@@ -685,8 +601,65 @@ export default function LobbyScreen() {
       {/* ═══ LAYER 5: UI content ═══ */}
       <View style={$.content}>
 
-        {/* ═══ ZONE 1: Game Mode Buttons ═══ */}
-        <Animated.View style={{ opacity: enterTop, transform: [{ translateY: enterTop.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }}>
+        {/* ═══ TOP BAR — Compact DH Texas Poker style ═══ */}
+        <Animated.View style={[$.topBar, { opacity: enterTop, transform: [{ translateY: enterTop.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }]}>
+          <LinearGradient
+            colors={['rgba(10,14,22,0.88)', 'rgba(14,18,28,0.75)'] as [string, string]}
+            style={$.topBarGrad}
+          >
+            {/* Left: Avatar → Profile */}
+            <TouchableOpacity style={$.topBarAvatarWrap} activeOpacity={0.7} onPress={() => nav.navigate('Profile' as any)}>
+              <LinearGradient colors={[C.purple, C.blue] as [string, string]} style={$.topBarAvatarGrad}>
+                <View style={$.topBarAvatarInner}>
+                  <Text style={$.topBarAvatarText}>{(user?.displayName || 'P')[0].toUpperCase()}</Text>
+                </View>
+              </LinearGradient>
+              {/* VIP badge overlay */}
+              <View style={[$.topBarVipBadge, { backgroundColor: currentVipCfg.color }]}>
+                <Text style={$.topBarVipBadgeText}>{user?.vipLevel || 1}</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Center-left: Name + VIP name */}
+            <View style={$.topBarInfo}>
+              <Text style={$.topBarName} numberOfLines={1}>{user?.displayName || 'Player'}</Text>
+              <Text style={[$.topBarVipName, { color: currentVipCfg.color }]}>
+                {currentVipCfg.emoji} {currentVipCfg.name}
+              </Text>
+            </View>
+
+            {/* Center: Chip count + Add button */}
+            <View style={$.topBarChips}>
+              <Image source={A.goldCoin} style={$.topBarCoinIcon} />
+              <Text style={$.topBarChipText}>{chipStr(user?.chips || 0)}</Text>
+              <TouchableOpacity
+                style={$.topBarAddBtn}
+                activeOpacity={0.7}
+                onPress={() => nav.navigate('Store' as any)}
+              >
+                <Animated.View style={{ transform: [{ scale: plusPulse }] }}>
+                  <Text style={$.topBarAddText}>+</Text>
+                </Animated.View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Right: Quick icons */}
+            <View style={$.topBarIcons}>
+              <TouchableOpacity style={$.topBarIconBtn} onPress={() => nav.navigate('LuckySpin' as any)}>
+                <Text style={$.topBarIconEmoji}>🎰</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={$.topBarIconBtn} onPress={() => nav.navigate('Missions' as any)}>
+                <Text style={$.topBarIconEmoji}>🎯</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={$.topBarIconBtn} onPress={() => nav.navigate('Settings' as any)}>
+                <Image source={A.iconSettings} style={$.topBarSettingsIcon} resizeMode="contain" />
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* ═══ ZONE 1: Game Mode Buttons (UNCHANGED) ═══ */}
+        <Animated.View style={{ opacity: enterHero, transform: [{ translateY: enterHero.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }], flex: 1, justifyContent: 'center' }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -796,120 +769,44 @@ export default function LobbyScreen() {
           </ScrollView>
         </Animated.View>
 
-        {/* ═══ ZONE 2: Player Profile Card ═══ */}
-        <Animated.View style={[$.profileCardZone, { opacity: enterHero, transform: [{ translateY: enterHero.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }]}>
-          <View style={$.profileCard}>
-            <LinearGradient
-              colors={['rgba(14,18,28,0.92)', 'rgba(18,14,26,0.88)'] as [string, string]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={$.profileCardGrad}
+        {/* ═══ QUICK ACCESS ROW ═══ */}
+        <Animated.View style={[$.quickAccessRow, { opacity: enterBottom, transform: [{ translateY: enterBottom.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
+          {QUICK_ACCESS.map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={$.quickAccessBtn}
+              activeOpacity={0.7}
+              onPress={() => item.screen ? nav.navigate(item.screen as any) : Alert.alert('Coming Soon', 'Leaderboard coming soon!')}
             >
-              {/* Inner top shadow for depth */}
-              <LinearGradient
-                colors={['rgba(0,0,0,0.25)', 'transparent'] as [string, string]}
-                style={$.profileInnerShadow}
-                pointerEvents="none"
-              />
-
-              <View style={$.profileCardRow}>
-                {/* Left Column: Avatar + Level */}
-                <View style={$.profileLeft}>
-                  <View style={$.profileAvatarWrap}>
-                    <LinearGradient colors={[C.purple, C.blue] as [string, string]} style={$.profileAvatarGrad}>
-                      <View style={$.profileAvatarInner}>
-                        <Text style={$.profileAvatarText}>{(user?.displayName || 'P')[0].toUpperCase()}</Text>
-                      </View>
-                    </LinearGradient>
-                    <TouchableOpacity style={$.editAvatarBtn} activeOpacity={0.7}>
-                      <Text style={$.editAvatarText}>Edit</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={$.levelText}>Lv.{user?.vipLevel || 1}</Text>
-                  <View style={$.xpBarBg}>
-                    <View style={[$.xpBarFill, { width: '35%' } as any]} />
-                  </View>
-                </View>
-
-                {/* Center Column: Name + Chips + Honor */}
-                <View style={$.profileCenter}>
-                  <View style={$.profileNameRow}>
-                    <Text style={$.profileName} numberOfLines={1}>{user?.displayName || 'Player'}</Text>
-                    <TouchableOpacity activeOpacity={0.7}>
-                      <PremiumIcon name="edit" size={14} />
-                    </TouchableOpacity>
-                  </View>
-                  <View style={$.profileChipRow}>
-                    <Image source={A.goldCoin} style={$.profileCoinIcon} />
-                    <Text style={$.profileChipText}>{(user?.chips || 0).toLocaleString()}</Text>
-                  </View>
-                  <Text style={$.profileHonor}>Honor {winRate}%</Text>
-                  <TouchableOpacity style={$.promoBtn} activeOpacity={0.7}>
-                    <Text style={$.promoBtnText}>Promo code</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Right Column: Career Stats + Get More */}
-                <View style={$.profileRight}>
-                  <Text style={$.careerLabel}>Career:</Text>
-                  <Text style={$.careerStat}>{user?.gamesWon || 0} Win</Text>
-                  <Text style={$.careerStat}>Biggest: ${chipStr((user as any)?.maxWin || 0)}</Text>
-                  <Text style={$.careerStat}>Best Hand:</Text>
-                  <TouchableOpacity style={$.getMoreBtn} activeOpacity={0.7} onPress={() => nav.navigate('Store' as any)}>
-                    <Animated.View style={{ transform: [{ scale: plusPulse }] }}>
-                      <LinearGradient colors={['#E8C84A', '#D4AF37'] as [string, string]} style={$.getMoreGrad}>
-                        <Text style={$.getMoreText}>Get more</Text>
-                      </LinearGradient>
-                    </Animated.View>
-                  </TouchableOpacity>
-                  <View style={$.monthlyBadge}>
-                    <Text style={$.monthlyBadgeText}>Monthly Offer</Text>
-                  </View>
-                </View>
+              <View style={$.quickAccessCircle}>
+                <Text style={$.quickAccessEmoji}>{item.emoji}</Text>
               </View>
-
-              {/* VIP Progress Bar */}
-              <View style={$.vipProgressWrap}>
-                <View style={$.vipProgressHeader}>
-                  <Text style={[$.vipProgressLabel, { color: currentVipCfg.color }]}>
-                    {currentVipCfg.emoji} {currentVipCfg.name}
-                  </Text>
-                  {nextVipCfg && (
-                    <Text style={[$.vipProgressLabel, { color: nextVipCfg.color }]}>
-                      {nextVipCfg.emoji} {nextVipCfg.name}
-                    </Text>
-                  )}
-                </View>
-                <View style={$.vipBarBg}>
-                  <LinearGradient
-                    colors={[currentVipCfg.color, nextVipCfg?.color || currentVipCfg.color] as [string, string]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[$.vipBarFill, { width: `${Math.max(3, vipProgress * 100)}%` } as any]}
-                  />
-                </View>
-                <Text style={$.vipXpText}>
-                  {vipXpInLevel.toLocaleString()} / {vipXpNeeded.toLocaleString()} XP
-                </Text>
-              </View>
-            </LinearGradient>
-          </View>
+              <Text style={$.quickAccessLabel}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
         </Animated.View>
 
-        {/* ═══ ZONE 3: Bottom Nav Icons ═══ */}
-        <Animated.View style={[$.bottomZone, { opacity: enterBottom, transform: [{ translateY: enterBottom.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
-          <View style={$.bottomNav}>
-            {NAV_ITEMS.map((item) => (
-              <NavIconBtn
-                key={item.key}
-                asset={item.asset}
-                label={item.label}
-                accent={item.accent ?? false}
-                onPress={() => nav.navigate(item.screen as any)}
-              />
+        {/* ═══ BOTTOM TAB BAR ═══ */}
+        <Animated.View style={[$.bottomTabBar, { opacity: enterBottom }]}>
+          <LinearGradient
+            colors={['rgba(10,14,22,0.92)', 'rgba(8,11,18,0.98)'] as [string, string]}
+            style={$.bottomTabBarGrad}
+          >
+            {TAB_ITEMS.map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={$.tabItem}
+                activeOpacity={0.7}
+                onPress={() => tab.screen ? nav.navigate(tab.screen as any) : null}
+              >
+                <View style={[$.tabIconWrap, tab.active && $.tabIconWrapActive]}>
+                  <Text style={[$.tabEmoji, tab.active && $.tabEmojiActive]}>{tab.emoji}</Text>
+                </View>
+                <Text style={[$.tabLabel, tab.active && $.tabLabelActive]}>{tab.label}</Text>
+                {tab.active && <View style={$.tabActiveDot} />}
+              </TouchableOpacity>
             ))}
-          </View>
-
+          </LinearGradient>
         </Animated.View>
 
       </View>
@@ -1172,317 +1069,243 @@ const $ = StyleSheet.create({
     color: '#1a1a2e',
   },
 
-  /* ═══ ZONE 2: Player Profile Card ═══ */
-  profileCardZone: {
-    justifyContent: 'flex-start',
-    paddingTop: hp(12),
-    paddingBottom: hp(6),
+  /* ═══ TOP BAR — Compact DH Texas Poker style ═══ */
+  topBar: {
+    marginHorizontal: -wp(20),
+    zIndex: 10,
   },
-  profileCard: {
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(212,175,55,0.5)',
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 20 },
-      android: { elevation: 10 },
-      web: { boxShadow: '0 0 30px 5px rgba(212,175,55,0.15)' } as any,
-    }),
-  } as any,
-  profileCardGrad: {
-    borderRadius: 18,
-    padding: wp(12),
-    overflow: 'hidden',
-  },
-  profileInnerShadow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 8,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-  } as any,
-  profileCardRow: {
+  topBarGrad: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    paddingHorizontal: wp(12),
+    paddingVertical: hp(6),
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(212,175,55,0.12)',
   },
-
-  /* Profile Left: Avatar + Level */
-  profileLeft: {
-    width: '22%',
-    alignItems: 'flex-start',
-  } as any,
-  profileAvatarWrap: {
-    width: wp(64),
-    height: wp(64),
-    borderRadius: wp(32),
+  topBarAvatarWrap: {
+    width: wp(40),
+    height: wp(40),
+    borderRadius: wp(20),
     overflow: 'visible',
-    ...Platform.select({
-      ios: { shadowColor: 'rgba(155,92,255,0.5)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 14 },
-      android: { elevation: 8 },
-    }),
-  } as any,
-  profileAvatarGrad: {
+  },
+  topBarAvatarGrad: {
     flex: 1,
-    borderRadius: wp(32),
+    borderRadius: wp(20),
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 3,
+    padding: 2,
   },
-  profileAvatarInner: {
+  topBarAvatarInner: {
     flex: 1,
     width: '100%',
-    borderRadius: wp(30),
+    borderRadius: wp(18),
     backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  profileAvatarText: {
+  topBarAvatarText: {
     color: C.txt,
-    fontSize: fs(28),
+    fontSize: fs(16),
     fontWeight: '900',
   },
-  editAvatarBtn: {
+  topBarVipBadge: {
     position: 'absolute',
     bottom: -2,
     right: -2,
-    backgroundColor: 'rgba(20,24,50,0.85)',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  editAvatarText: {
-    color: C.muted,
-    fontSize: fs(8),
-    fontWeight: '700',
-  },
-  levelText: {
-    color: C.gold,
-    fontSize: fs(12),
-    fontWeight: '800',
-    marginTop: hp(6),
-  },
-  xpBarBg: {
-    width: wp(60),
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    marginTop: hp(4),
-    overflow: 'hidden',
-  },
-  xpBarFill: {
-    height: '100%',
-    borderRadius: 2,
-    backgroundColor: C.gold,
-  } as any,
-
-  /* Profile Center: Name + Chips */
-  profileCenter: {
-    width: '46%',
-    paddingLeft: wp(6),
-    paddingRight: wp(4),
-  } as any,
-  profileNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: wp(6),
-    marginBottom: hp(6),
-  } as any,
-  profileName: {
-    color: C.txt,
-    fontSize: fs(18),
-    fontWeight: '800',
-    flexShrink: 1,
-  },
-  profileChipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: wp(6),
-    marginBottom: hp(4),
-  } as any,
-  profileCoinIcon: {
-    width: wp(20),
-    height: wp(20),
-  },
-  profileChipText: {
-    color: C.gold,
-    fontSize: fs(20),
-    fontWeight: '900',
-    textShadowColor: 'rgba(212,175,55,0.5)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
-  },
-  profileHonor: {
-    color: C.muted,
-    fontSize: fs(11),
-    fontWeight: '600',
-    marginBottom: hp(6),
-  },
-  promoBtn: {
-    borderWidth: 1,
-    borderColor: C.dim,
-    borderRadius: 12,
-    paddingHorizontal: wp(10),
-    paddingVertical: hp(4),
-    alignSelf: 'flex-start',
-  },
-  promoBtnText: {
-    color: C.muted,
-    fontSize: fs(9),
-    fontWeight: '700',
-  },
-
-  /* Profile Right: Career Stats */
-  profileRight: {
-    width: '32%',
-    alignItems: 'flex-end',
-  } as any,
-  careerLabel: {
-    color: C.muted,
-    fontSize: fs(10),
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: hp(4),
-    textTransform: 'uppercase',
-  },
-  careerStat: {
-    color: C.txt,
-    fontSize: fs(10),
-    fontWeight: '600',
-    marginBottom: hp(2),
-    textAlign: 'right',
-  },
-  getMoreBtn: {
-    marginTop: hp(6),
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  getMoreGrad: {
-    borderRadius: 14,
-    paddingHorizontal: wp(14),
-    paddingVertical: hp(6),
-  },
-  getMoreText: {
-    color: '#0A0E1A',
-    fontSize: fs(10),
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  monthlyBadge: {
-    marginTop: hp(4),
-    backgroundColor: 'rgba(212,175,55,0.12)',
-    borderRadius: 8,
-    paddingHorizontal: wp(6),
-    paddingVertical: hp(2),
-    borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.25)',
-  },
-  monthlyBadgeText: {
-    color: C.gold,
-    fontSize: fs(7),
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-
-  /* VIP Progress Bar */
-  vipProgressWrap: {
-    marginTop: hp(8),
-    paddingTop: hp(6),
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-  },
-  vipProgressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: hp(4),
-  } as any,
-  vipProgressLabel: {
-    fontSize: fs(11),
-    fontWeight: '700',
-  },
-  vipBarBg: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-  },
-  vipBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  } as any,
-  vipXpText: {
-    fontSize: fs(9),
-    color: C.muted,
-    textAlign: 'center',
-    marginTop: hp(4),
-    fontVariant: ['tabular-nums'],
-  } as any,
-
-  /* ═══ ZONE 3: Bottom Nav Icons ═══ */
-  bottomZone: {
-    paddingBottom: hp(12),
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-    marginBottom: hp(12),
-  } as any,
-  navIconWrap: {
-    alignItems: 'center',
-    gap: hp(5),
-  } as any,
-  navIconBtn: {
-    width: wp(58),
-    height: wp(58),
-    borderRadius: wp(16),
-    backgroundColor: 'rgba(12,14,30,0.8)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(212,175,55,0.15)',
+    width: wp(16),
+    height: wp(16),
+    borderRadius: wp(8),
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'visible',
+    borderWidth: 1.5,
+    borderColor: C.bg,
   },
-  navIconAccent: {
-    borderColor: 'rgba(212,175,55,0.35)',
-    backgroundColor: 'rgba(18,16,36,0.85)',
+  topBarVipBadgeText: {
+    color: '#FFF',
+    fontSize: fs(8),
+    fontWeight: '900',
   },
-  navIconImg: {
-    width: wp(36),
-    height: wp(36),
+  topBarInfo: {
+    marginLeft: wp(8),
+    flex: 1,
+    minWidth: 0,
   },
-  navIconGlow: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: wp(16),
+  topBarName: {
+    color: C.txt,
+    fontSize: fs(13),
+    fontWeight: '800',
+  },
+  topBarVipName: {
+    fontSize: fs(9),
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  topBarChips: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14,
+    paddingHorizontal: wp(8),
+    paddingVertical: hp(4),
+    marginLeft: wp(6),
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.2)',
+  } as any,
+  topBarCoinIcon: {
+    width: wp(16),
+    height: wp(16),
+    marginRight: wp(4),
+  },
+  topBarChipText: {
+    color: C.gold,
+    fontSize: fs(13),
+    fontWeight: '900',
+    textShadowColor: 'rgba(212,175,55,0.4)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
+  },
+  topBarAddBtn: {
+    width: wp(22),
+    height: wp(22),
+    borderRadius: wp(11),
+    backgroundColor: '#26D95C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: wp(6),
     ...Platform.select({
-      ios: { shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12 },
-      android: { elevation: 6 },
+      ios: { shadowColor: '#26D95C', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6 },
+      android: { elevation: 4 },
     }),
   } as any,
-  navIconRing: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: wp(16),
-    borderWidth: 2,
-    borderColor: '#D4AF37',
+  topBarAddText: {
+    color: '#FFF',
+    fontSize: fs(16),
+    fontWeight: '900',
+    lineHeight: fs(18),
+    marginTop: -1,
+  },
+  topBarIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: wp(8),
+    gap: wp(4),
+  } as any,
+  topBarIconBtn: {
+    width: wp(30),
+    height: wp(30),
+    borderRadius: wp(15),
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  topBarIconEmoji: {
+    fontSize: fs(14),
+  },
+  topBarSettingsIcon: {
+    width: wp(16),
+    height: wp(16),
+    tintColor: C.muted,
+  } as any,
+
+  /* ═══ QUICK ACCESS ROW ═══ */
+  quickAccessRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: wp(16),
+    paddingVertical: hp(8),
+    marginBottom: hp(4),
+  } as any,
+  quickAccessBtn: {
+    alignItems: 'center',
+  },
+  quickAccessCircle: {
+    width: wp(48),
+    height: wp(48),
+    borderRadius: wp(24),
+    backgroundColor: 'rgba(14,18,34,0.75)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(212,175,55,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
     ...Platform.select({
-      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6 },
-      android: { elevation: 3 },
+      ios: { shadowColor: 'rgba(212,175,55,0.3)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 8 },
+      android: { elevation: 4 },
     }),
   } as any,
-  navIconLabel: {
+  quickAccessEmoji: {
+    fontSize: fs(20),
+  },
+  quickAccessLabel: {
     color: C.muted,
     fontSize: fs(8),
     fontWeight: '700',
+    marginTop: hp(3),
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
-  navIconLabelAccent: {
-    color: '#D4AF37',
+
+  /* ═══ BOTTOM TAB BAR ═══ */
+  bottomTabBar: {
+    marginHorizontal: -wp(20),
   },
+  bottomTabBarGrad: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    paddingTop: hp(8),
+    paddingBottom: hp(20),
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(212,175,55,0.1)',
+  } as any,
+  tabItem: {
+    alignItems: 'center',
+    minWidth: wp(56),
+  },
+  tabIconWrap: {
+    width: wp(36),
+    height: wp(36),
+    borderRadius: wp(18),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabIconWrapActive: {
+    backgroundColor: 'rgba(212,175,55,0.12)',
+    ...Platform.select({
+      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 10 },
+      android: { elevation: 4 },
+    }),
+  } as any,
+  tabEmoji: {
+    fontSize: fs(18),
+    opacity: 0.5,
+  },
+  tabEmojiActive: {
+    opacity: 1,
+  },
+  tabLabel: {
+    color: C.muted,
+    fontSize: fs(9),
+    fontWeight: '700',
+    marginTop: hp(2),
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  tabLabelActive: {
+    color: C.gold,
+  },
+  tabActiveDot: {
+    width: wp(4),
+    height: wp(4),
+    borderRadius: wp(2),
+    backgroundColor: C.gold,
+    marginTop: hp(3),
+    ...Platform.select({
+      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4 },
+    }),
+  } as any,
 
   /* ── Glassmorphism ── */
   glassOuter: {
