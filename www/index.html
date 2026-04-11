@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bull Fight — Niu Niu Poker</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <canvas id="particleCanvas"></canvas>
+
+  <div id="app">
+    <!-- ═══════════ TOP BAR ═══════════ -->
+    <header id="topBar" class="top-bar hidden">
+      <div class="top-left">
+        <div class="vip-badge" id="topVipBadge">🥉</div>
+        <span class="player-name" id="topPlayerName">Player</span>
+      </div>
+      <div class="top-right">
+        <div class="chip-display">
+          <span class="chip-icon">💰</span>
+          <span id="topChipAmount">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══════════ AUTH OVERLAY ═══════════ -->
+    <div id="authOverlay" class="overlay active">
+      <div class="auth-container">
+        <div class="auth-logo">
+          <div class="logo-cards">
+            <div class="logo-card card-red">♥</div>
+            <div class="logo-card card-black">♠</div>
+          </div>
+          <h1 class="auth-title">BULL FIGHT</h1>
+          <p class="auth-subtitle">Niu Niu Poker</p>
+        </div>
+
+        <!-- Login -->
+        <div id="loginForm" class="auth-form">
+          <div class="input-group">
+            <input type="email" id="loginEmail" placeholder="Email" autocomplete="email">
+          </div>
+          <div class="input-group">
+            <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+          </div>
+          <button class="btn btn-gold btn-full" onclick="handleLogin()">LOG IN</button>
+          <div class="auth-divider"><span>or</span></div>
+          <button class="btn btn-social" onclick="handleGoogleLogin()">Continue with Google</button>
+          <p class="auth-switch">Don't have an account? <a onclick="showSignup()">Sign Up</a></p>
+        </div>
+
+        <!-- Signup -->
+        <div id="signupForm" class="auth-form hidden">
+          <div class="input-group">
+            <input type="text" id="signupName" placeholder="Display Name" autocomplete="name">
+          </div>
+          <div class="input-group">
+            <input type="email" id="signupEmail" placeholder="Email" autocomplete="email">
+          </div>
+          <div class="input-group">
+            <input type="password" id="signupPassword" placeholder="Password (min 8 chars)" autocomplete="new-password">
+          </div>
+          <button class="btn btn-gold btn-full" onclick="handleSignup()">CREATE ACCOUNT</button>
+          <div class="bonus-callout">🎉 New players get <strong>100,000 FREE chips!</strong></div>
+          <p class="auth-switch">Already have an account? <a onclick="showLogin()">Log In</a></p>
+        </div>
+
+        <div id="authError" class="auth-error hidden"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════ SCREENS ═══════════ -->
+    <div id="screensContainer" class="screens-container hidden">
+
+      <!-- ——— LOBBY ——— -->
+      <div id="lobbyScreen" class="screen active">
+        <div class="lobby-welcome">
+          <h2>Choose Your Table</h2>
+        </div>
+        <div class="mode-toggle">
+          <button class="mode-btn active" data-mode="pvd" onclick="setGameMode('pvd')">🤖 vs Dealer</button>
+          <button class="mode-btn" data-mode="pvp" onclick="setGameMode('pvp')">👥 vs Players</button>
+        </div>
+        <div class="tier-grid" id="tierGrid"></div>
+        <div class="daily-bonus" onclick="claimDailyBonus()">
+          <span class="bonus-icon">🎁</span>
+          <div class="bonus-info">
+            <div class="bonus-title">Daily Bonus</div>
+            <div class="bonus-desc">Claim your free chips!</div>
+          </div>
+          <span class="bonus-arrow">→</span>
+        </div>
+      </div>
+
+      <!-- ——— GAME TABLE ——— -->
+      <div id="gameScreen" class="screen">
+        <div class="game-table-wrapper">
+          <div class="game-table">
+            <button class="game-back-btn" onclick="leaveTable()">✕</button>
+            <div class="table-brand">BULL FIGHT</div>
+            <div class="table-name" id="tableName">Monte Carlo</div>
+
+            <!-- Dealer -->
+            <div class="dealer-zone">
+              <div class="dealer-label">DEALER</div>
+              <div class="bf-cards-row" id="dealerCards"></div>
+              <div class="bf-hand-tag" id="dealerHandTag"></div>
+            </div>
+
+            <!-- VS Divider -->
+            <div class="vs-divider"><span>VS</span></div>
+
+            <!-- 3 Betting Seats -->
+            <div class="seats-row">
+              <div class="seat" id="seat0" onclick="selectSeat(0)">
+                <div class="seat-label">SEAT 1</div>
+                <div class="bf-cards-row seat-cards" id="seatCards0"></div>
+                <div class="bf-hand-tag seat-hand" id="seatHand0"></div>
+                <div class="seat-result" id="seatResult0"></div>
+                <div class="seat-bet" id="seatBet0">
+                  <span class="seat-bet-label">BET</span>
+                  <span class="seat-bet-amount" id="seatBetAmt0">—</span>
+                </div>
+              </div>
+              <div class="seat" id="seat1" onclick="selectSeat(1)">
+                <div class="seat-label">SEAT 2</div>
+                <div class="bf-cards-row seat-cards" id="seatCards1"></div>
+                <div class="bf-hand-tag seat-hand" id="seatHand1"></div>
+                <div class="seat-result" id="seatResult1"></div>
+                <div class="seat-bet" id="seatBet1">
+                  <span class="seat-bet-label">BET</span>
+                  <span class="seat-bet-amount" id="seatBetAmt1">—</span>
+                </div>
+              </div>
+              <div class="seat" id="seat2" onclick="selectSeat(2)">
+                <div class="seat-label">SEAT 3</div>
+                <div class="bf-cards-row seat-cards" id="seatCards2"></div>
+                <div class="bf-hand-tag seat-hand" id="seatHand2"></div>
+                <div class="seat-result" id="seatResult2"></div>
+                <div class="seat-bet" id="seatBet2">
+                  <span class="seat-bet-label">BET</span>
+                  <span class="seat-bet-amount" id="seatBetAmt2">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payout Table (collapsed) -->
+            <div class="payout-bar" id="payoutBar" onclick="togglePayoutTable()">
+              Pair 1x · Two Pair 2x · 3oK 3x · Straight 5x · Flush 6x · Full House 8x · 4oK 25x · SF 50x · RF 100x
+            </div>
+          </div>
+
+          <!-- Game Controls -->
+          <div class="game-controls" id="gameControls">
+            <div id="bettingControls">
+              <div class="selected-seat-label" id="selectedSeatLabel">Tap a seat to bet</div>
+              <div class="chip-selector" id="chipSelector"></div>
+              <div class="bet-actions">
+                <button class="btn btn-outline" onclick="clearAllBets()">Clear All</button>
+                <button class="btn btn-deal" id="dealBtn" onclick="deal()" disabled>DEAL</button>
+              </div>
+            </div>
+            <div id="resultControls" class="hidden">
+              <div class="total-result" id="totalResult"></div>
+              <button class="btn btn-gold btn-full" onclick="playAgain()">Play Again</button>
+              <button class="btn btn-outline btn-full" onclick="leaveTable()" style="margin-top:8px">Change Table</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ——— FRIENDS ——— -->
+      <div id="friendsScreen" class="screen">
+        <h2 class="screen-title">Friends</h2>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchFriendsTab(this,'list')">Friends</button>
+          <button class="tab-btn" onclick="switchFriendsTab(this,'requests')">Requests</button>
+          <button class="tab-btn" onclick="switchFriendsTab(this,'search')">Search</button>
+        </div>
+        <div id="friendsContent" class="content-list"></div>
+      </div>
+
+      <!-- ——— STORE ——— -->
+      <div id="storeScreen" class="screen">
+        <h2 class="screen-title">Store</h2>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchStoreTab(this,'chips')">💰 Chips</button>
+          <button class="tab-btn" onclick="switchStoreTab(this,'cosmetics')">🎨 Skins</button>
+          <button class="tab-btn" onclick="switchStoreTab(this,'vip')">👑 VIP</button>
+        </div>
+        <div id="storeContent" class="content-list"></div>
+      </div>
+
+      <!-- ——— PROFILE ——— -->
+      <div id="profileScreen" class="screen">
+        <div id="profileContent"></div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════ BOTTOM NAV ═══════════ -->
+    <nav id="bottomNav" class="bottom-nav hidden">
+      <button class="nav-btn active" data-screen="lobbyScreen" onclick="navigateTo('lobbyScreen')">
+        <span class="nav-icon">🃏</span><span class="nav-label">Play</span>
+      </button>
+      <button class="nav-btn" data-screen="friendsScreen" onclick="navigateTo('friendsScreen')">
+        <span class="nav-icon">👥</span><span class="nav-label">Friends</span>
+      </button>
+      <button class="nav-btn" data-screen="storeScreen" onclick="navigateTo('storeScreen')">
+        <span class="nav-icon">🛒</span><span class="nav-label">Store</span>
+      </button>
+      <button class="nav-btn" data-screen="profileScreen" onclick="navigateTo('profileScreen')">
+        <span class="nav-icon">👤</span><span class="nav-label">Profile</span>
+      </button>
+    </nav>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
