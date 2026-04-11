@@ -1013,7 +1013,7 @@ const $ = StyleSheet.create({
   gameModeStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: wp(16),
+    paddingHorizontal: wp(20),
     gap: wp(10),
     paddingVertical: hp(6),
   },
@@ -1431,8 +1431,7 @@ const $ = StyleSheet.create({
   bottomNav: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: wp(16),
+    justifyContent: 'space-evenly',
     marginBottom: hp(12),
   } as any,
   navIconWrap: {
