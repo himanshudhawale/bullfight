@@ -14,6 +14,7 @@ import notificationRoutes from './routes/notifications';
 import clubRoutes from './routes/club';
 import missionsRoutes from './routes/missions';
 import luckySpinRoutes from './routes/luckySpin';
+import mailRoutes from './routes/mail';
 import { setupGameSocket } from './socket/gameSocket';
 import { BullfightManager } from './game/bullfightManager';
 import { PokerManager } from './game/poker/pokerManager';
@@ -65,6 +66,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/missions', missionsRoutes);
 app.use('/api/lucky-spin', luckySpinRoutes);
+app.use('/api/mail', mailRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

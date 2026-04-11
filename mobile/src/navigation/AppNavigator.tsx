@@ -25,6 +25,7 @@ import StoreScreen from '../screens/store/StoreScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import MissionsScreen from '../screens/lobby/MissionsScreen';
 import LuckySpinScreen from '../screens/lobby/LuckySpinScreen';
+import InboxScreen from '../screens/lobby/InboxScreen';
 
 export type RootStackParamList = {
   Main: undefined;
@@ -40,6 +41,7 @@ export type RootStackParamList = {
   Settings: undefined;
   Missions: undefined;
   LuckySpin: undefined;
+  Inbox: undefined;
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -161,6 +163,7 @@ function MainNavigator() {
       <RootStack.Screen name="Tournaments" component={TournamentScreen} />
       <RootStack.Screen name="Missions" component={MissionsScreen} />
       <RootStack.Screen name="LuckySpin" component={LuckySpinScreen} />
+      <RootStack.Screen name="Inbox" component={InboxScreen} />
     </RootStack.Navigator>
   );
 }

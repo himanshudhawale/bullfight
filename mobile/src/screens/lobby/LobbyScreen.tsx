@@ -14,7 +14,6 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -485,34 +484,13 @@ export default function LobbyScreen() {
     return () => sub.remove();
   }, []);
 
-  // Daily claim state
-  const DAILY_KEY = 'bf_last_daily_claim';
-  const DAILY_AMOUNT = 5000;
-  const [dailyClaimed, setDailyClaimed] = useState(false);
-  const [claiming, setClaiming] = useState(false);
-
-  // Check if already claimed today
-  useEffect(() => {
-    AsyncStorage.getItem(DAILY_KEY).then((val) => {
-      if (val === new Date().toDateString()) setDailyClaimed(true);
-    });
-  }, []);
-
-  const handleDailyClaim = useCallback(async () => {
-    if (dailyClaimed || claiming) return;
-    setClaiming(true);
-    try {
-      await api.claimStreakBonus();
-      await AsyncStorage.setItem(DAILY_KEY, new Date().toDateString());
-      setDailyClaimed(true);
-      await loadUser();
-      Alert.alert('🎁 Daily Bonus', 'Free chips added to your balance!');
-    } catch {
-      Alert.alert('Error', 'Could not claim daily bonus. Try again later.');
-    } finally {
-      setClaiming(false);
-    }
-  }, [dailyClaimed, claiming]);
+  // Mail unread badge
+  const [unreadMail, setUnreadMail] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      api.getMail().then((res: any) => setUnreadMail(res.unreadCount || 0)).catch(() => {});
+    }, [])
+  );
 
   // FX overlay subtle drift animation
   const fxDrift = useRef(new Animated.Value(0)).current;
@@ -650,21 +628,17 @@ export default function LobbyScreen() {
     };
   }, []);
 
-  // ── Task 3: Bonus pulse + glow animations ──
-  const bonusPulse = useRef(new Animated.Value(1)).current;
-  const bonusGlowAnim = useRef(new Animated.Value(0.2)).current;
+  // ── Mail icon pulse animation ──
+  const mailPulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.loop(Animated.sequence([
-      Animated.timing(bonusPulse, { toValue: 1.02, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      Animated.timing(bonusPulse, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-    ])).start();
-
-    Animated.loop(Animated.sequence([
-      Animated.timing(bonusGlowAnim, { toValue: 0.5, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      Animated.timing(bonusGlowAnim, { toValue: 0.2, duration: 1500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-    ])).start();
-  }, []);
+    if (unreadMail > 0) {
+      Animated.loop(Animated.sequence([
+        Animated.timing(mailPulse, { toValue: 1.15, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(mailPulse, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])).start();
+    }
+  }, [unreadMail]);
 
   return (
     <View style={$.root}>
@@ -956,48 +930,23 @@ export default function LobbyScreen() {
             ))}
           </View>
 
-          {/* Daily bonus card */}
-          {!dailyClaimed && (
-          <TouchableOpacity activeOpacity={0.9} onPress={handleDailyClaim} disabled={claiming}>
-            <Animated.View style={[$.bonusCardWrap, { transform: [{ scale: bonusPulse }] }]}>
-              <Animated.View style={[$.bonusOuterGlow, { opacity: bonusGlowAnim }]} />
+          {/* Mail / Inbox button */}
+          <TouchableOpacity activeOpacity={0.85} onPress={() => nav.navigate('Inbox' as any)} style={$.mailBtnWrap}>
+            <Animated.View style={[$.mailBtn, unreadMail > 0 && { transform: [{ scale: mailPulse }] }]}>
               <LinearGradient
-                colors={['rgba(14,18,28,0.92)', 'rgba(18,14,26,0.88)', 'rgba(14,18,28,0.92)'] as [string, string, ...string[]]}
-                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={$.bonusCard}
+                colors={['rgba(14,18,28,0.92)', 'rgba(18,14,26,0.88)'] as [string, string]}
+                style={$.mailBtnGrad}
               >
-                <LinearGradient
-                  colors={['rgba(0,0,0,0.2)', 'transparent'] as [string, string]}
-                  style={$.bonusInnerShadow}
-                  pointerEvents="none"
-                />
-                <LinearGradient
-                  colors={['transparent', 'rgba(212,175,55,0.03)'] as [string, string]}
-                  style={$.bonusInnerHighlight}
-                  pointerEvents="none"
-                />
-                <View style={$.bonusCardInner}>
-                  <PremiumIcon name="gift" size={22} />
-                  <View style={$.bonusCenter}>
-                    <Text style={$.bonusDailyLabel}>DAILY BONUS</Text>
-                    <Text style={$.bonusChipAmount}>5,000</Text>
-                    <Text style={$.bonusChipLabel}>FREE CHIPS</Text>
+                <Text style={$.mailIcon}>✉️</Text>
+                <Text style={$.mailLabel}>MAIL</Text>
+                {unreadMail > 0 && (
+                  <View style={$.mailBadge}>
+                    <Text style={$.mailBadgeText}>{unreadMail > 9 ? '9+' : unreadMail}</Text>
                   </View>
-                  <View style={$.bonusClaimWrap}>
-                    <Animated.View style={[$.bonusClaimGlow, { opacity: bonusGlowAnim }]} />
-                    <LinearGradient
-                      colors={claiming ? ['#555', '#444'] as [string, string] : ['#E8C84A', '#D4AF37', '#B8941F'] as [string, string, ...string[]]}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                      style={$.bonusClaimBtn}
-                    >
-                      <Text style={$.bonusClaimBtnText}>{claiming ? '...' : 'CLAIM'}</Text>
-                    </LinearGradient>
-                  </View>
-                </View>
+                )}
               </LinearGradient>
             </Animated.View>
           </TouchableOpacity>
-          )}
         </Animated.View>
 
       </View>
@@ -1659,111 +1608,46 @@ const $ = StyleSheet.create({
   },
 
   /* ── Bonus card ── */
-  bonusCardWrap: {
+  mailBtnWrap: {
     alignSelf: 'center',
-    width: '100%',
     marginBottom: hp(8),
-  } as any,
-  bonusOuterGlow: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 20,
-    top: -5,
-    bottom: -5,
-    left: -5,
-    right: -5,
-    backgroundColor: 'rgba(212,175,55,0.06)',
-    ...Platform.select({
-      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.2, shadowRadius: 16 },
-      android: { elevation: 6 },
-    }),
-  } as any,
-  bonusCard: {
+  },
+  mailBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  mailBtnGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: hp(10),
+    paddingHorizontal: wp(20),
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(212,175,55,0.2)',
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10 },
-      android: { elevation: 8 },
-    }),
   } as any,
-  bonusInnerShadow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 6,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  } as any,
-  bonusInnerHighlight: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '40%',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-  } as any,
-  bonusCardInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: hp(12),
-    paddingHorizontal: wp(16),
-  } as any,
-  bonusCenter: {
-    flex: 1,
-    marginLeft: wp(10),
+  mailIcon: {
+    fontSize: fs(20),
+    marginRight: wp(8),
   },
-  bonusDailyLabel: {
-    color: C.muted,
-    fontSize: fs(9),
-    fontWeight: '600',
-    letterSpacing: 2,
-    marginBottom: hp(1),
-  },
-  bonusChipAmount: {
-    color: C.gold,
-    fontSize: fs(24),
-    fontWeight: '900',
-    letterSpacing: 1,
-    textShadowColor: 'rgba(212,175,55,0.3)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
-  },
-  bonusChipLabel: {
-    color: C.muted,
-    fontSize: fs(10),
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginTop: hp(2),
-  },
-  bonusClaimWrap: {
-    position: 'relative',
-  },
-  bonusClaimGlow: {
-    position: 'absolute',
-    top: -4,
-    left: -4,
-    right: -4,
-    bottom: -4,
-    borderRadius: 104,
-    backgroundColor: 'rgba(212,175,55,0.12)',
-    ...Platform.select({
-      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.35, shadowRadius: 10 },
-      android: { elevation: 4 },
-    }),
-  } as any,
-  bonusClaimBtn: {
-    borderRadius: 100,
-    paddingHorizontal: wp(24),
-    paddingVertical: hp(12),
-  },
-  bonusClaimBtnText: {
-    color: '#0A0E1A',
+  mailLabel: {
+    color: '#F0E6D3',
     fontSize: fs(13),
-    fontWeight: '900',
+    fontWeight: '800' as const,
     letterSpacing: 2,
+  },
+  mailBadge: {
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginLeft: wp(8),
+    paddingHorizontal: 4,
+  },
+  mailBadgeText: {
+    color: '#FFF',
+    fontSize: fs(10),
+    fontWeight: '900' as const,
   },
 });

@@ -151,6 +151,32 @@ class ApiService {
     return data;
   }
 
+  // ---- Mail / Inbox ----
+  async getMail() {
+    const { data } = await this.client.get('/mail');
+    return data;
+  }
+
+  async claimMail(id: string) {
+    const { data } = await this.client.post(`/mail/${id}/claim`);
+    return data;
+  }
+
+  async markMailRead(id: string) {
+    const { data } = await this.client.post(`/mail/${id}/read`);
+    return data;
+  }
+
+  async deleteMail(id: string) {
+    const { data } = await this.client.delete(`/mail/${id}`);
+    return data;
+  }
+
+  async claimAllMail() {
+    const { data } = await this.client.post('/mail/claim-all');
+    return data;
+  }
+
   // ---- Leaderboard ----
   async getLeaderboard(): Promise<Array<{ userId: string; displayName: string; chips: number; vipLevel: number }>> {
     const { data } = await this.client.get('/game/leaderboard');

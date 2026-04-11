@@ -171,7 +171,7 @@ router.post('/vip/daily', authMiddleware, async (req: AuthRequest, res: Response
 
     // Grant scaled daily bonus + daily login XP
     const cfg = getVipConfig(user.vipLevel || 1);
-    const dailyChips = Math.floor(DAILY_BONUS_BASE * cfg.dailyBonusMultiplier);
+    const dailyChips = cfg.dailyBonus;
     user.chips = (user.chips || 0) + dailyChips;
     user.vipXp = (user.vipXp || 0) + VIP_XP_REWARDS.DAILY_LOGIN;
     user.lastVipDailyAt = new Date().toISOString();
