@@ -12,6 +12,193 @@ export interface Card {
   rank: Rank;
 }
 
+// ---- Table Tiers ----
+export enum TableTier {
+  MONTE_CARLO = 'monte_carlo',
+  MACAU = 'macau',
+  LAS_VEGAS = 'las_vegas',
+  MONACO = 'monaco',
+}
+
+export interface TableTierConfig {
+  tier: TableTier;
+  name: string;
+  emoji: string;
+  minBet: number;
+  chipPresets: number[];
+}
+
+// ---- VIP System ----
+export enum VipLevel {
+  BRONZE = 0,
+  SILVER = 1,
+  GOLD = 2,
+  PLATINUM = 3,
+  DIAMOND = 4,
+  MASTER = 5,
+  GRANDMASTER = 6,
+  LEGEND = 7,
+  MYTHIC = 8,
+  IMMORTAL = 9,
+  DIVINE = 10,
+  SUPREME = 11,
+}
+
+export interface VipLevelConfig {
+  level: VipLevel;
+  name: string;
+  xpRequired: number;
+  dailyBonus: number;
+  rakeback: number; // percentage
+}
+
+export const VIP_LEVELS: VipLevelConfig[] = [
+  { level: VipLevel.BRONZE, name: 'Bronze', xpRequired: 0, dailyBonus: 10_000, rakeback: 0 },
+  { level: VipLevel.SILVER, name: 'Silver', xpRequired: 1_000, dailyBonus: 20_000, rakeback: 2 },
+  { level: VipLevel.GOLD, name: 'Gold', xpRequired: 5_000, dailyBonus: 50_000, rakeback: 5 },
+  { level: VipLevel.PLATINUM, name: 'Platinum', xpRequired: 15_000, dailyBonus: 100_000, rakeback: 8 },
+  { level: VipLevel.DIAMOND, name: 'Diamond', xpRequired: 50_000, dailyBonus: 250_000, rakeback: 12 },
+  { level: VipLevel.MASTER, name: 'Master', xpRequired: 150_000, dailyBonus: 500_000, rakeback: 15 },
+  { level: VipLevel.GRANDMASTER, name: 'Grandmaster', xpRequired: 500_000, dailyBonus: 1_000_000, rakeback: 18 },
+  { level: VipLevel.LEGEND, name: 'Legend', xpRequired: 1_500_000, dailyBonus: 2_500_000, rakeback: 20 },
+  { level: VipLevel.MYTHIC, name: 'Mythic', xpRequired: 5_000_000, dailyBonus: 5_000_000, rakeback: 22 },
+  { level: VipLevel.IMMORTAL, name: 'Immortal', xpRequired: 15_000_000, dailyBonus: 10_000_000, rakeback: 25 },
+  { level: VipLevel.DIVINE, name: 'Divine', xpRequired: 50_000_000, dailyBonus: 25_000_000, rakeback: 28 },
+  { level: VipLevel.SUPREME, name: 'Supreme', xpRequired: 150_000_000, dailyBonus: 50_000_000, rakeback: 30 },
+];
+
+export const VIP_XP_REWARDS = {
+  GAME_PLAYED: 10,
+  GAME_WON: 25,
+  DAILY_LOGIN: 50,
+  TOURNAMENT_PLAYED: 20,
+  TOURNAMENT_WON: 100,
+  CLUB_DONATION: 5,
+} as const;
+
+export function calculateVipLevel(xp: number): VipLevel {
+  let level = VipLevel.BRONZE;
+  for (const config of VIP_LEVELS) {
+    if (xp >= config.xpRequired) level = config.level;
+    else break;
+  }
+  return level;
+}
+
+export function getVipConfig(level: VipLevel): VipLevelConfig {
+  return VIP_LEVELS[level] || VIP_LEVELS[0];
+}
+
+// ---- Poker Tiers ----
+export interface PokerTierConfig {
+  tier: TableTier;
+  name: string;
+  smallBlind: number;
+  bigBlind: number;
+  minBuyIn: number;
+  maxBuyIn: number;
+  maxSeats: number;
+}
+
+export const POKER_TIERS: PokerTierConfig[] = [
+  { tier: TableTier.MONTE_CARLO, name: 'Monte Carlo', smallBlind: 50, bigBlind: 100, minBuyIn: 1_000, maxBuyIn: 5_000, maxSeats: 24 },
+  { tier: TableTier.MACAU, name: 'Macau', smallBlind: 500, bigBlind: 1_000, minBuyIn: 10_000, maxBuyIn: 50_000, maxSeats: 18 },
+  { tier: TableTier.LAS_VEGAS, name: 'Las Vegas', smallBlind: 5_000, bigBlind: 10_000, minBuyIn: 100_000, maxBuyIn: 500_000, maxSeats: 12 },
+  { tier: TableTier.MONACO, name: 'Monaco', smallBlind: 50_000, bigBlind: 100_000, minBuyIn: 1_000_000, maxBuyIn: 5_000_000, maxSeats: 6 },
+];
+
+// ---- Poker Game Types ----
+export type PokerAction = 'fold' | 'check' | 'call' | 'raise' | 'all_in';
+export type PokerPhase = 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
+
+export interface PokerPot {
+  amount: number;
+  eligible: string[];
+}
+
+export interface PokerSeat {
+  seatIndex: number;
+  userId: string;
+  displayName: string;
+  chips: number;
+  holeCards: Card[];
+  currentBet: number;
+  totalBetThisRound: number;
+  folded: boolean;
+  allIn: boolean;
+  isBot: boolean;
+  sittingOut: boolean;
+}
+
+export interface PokerSeatClient {
+  seatIndex: number;
+  userId: string | null;
+  displayName: string;
+  chips: number;
+  holeCards: Card[] | null;
+  currentBet: number;
+  folded: boolean;
+  allIn: boolean;
+  isBot: boolean;
+  sittingOut: boolean;
+}
+
+export interface PokerTableState {
+  tableId: string;
+  tier: TableTier;
+  phase: PokerPhase;
+  seats: PokerSeatClient[];
+  communityCards: Card[];
+  pots: PokerPot[];
+  dealerSeat: number;
+  activeSeat: number;
+  minRaise: number;
+  countdown: number;
+  handNumber: number;
+  lastAction: { seat: number; action: PokerAction; amount?: number } | null;
+  winners: { seatIndex: number; amount: number; hand?: string }[] | null;
+}
+
+export interface PokerTableSummary {
+  tableId: string;
+  tier: TableTier;
+  name: string;
+  playerCount: number;
+  maxSeats: number;
+  smallBlind: number;
+  bigBlind: number;
+}
+
+// ---- Chat ----
+export interface ChatMessage {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  text: string;
+  createdAt: string;
+  fromDisplayName?: string;
+}
+
+// ---- Emotes ----
+export interface EmoteConfig {
+  id: string;
+  label: string;
+  cost: number;
+}
+
+export const EMOTE_LIST: EmoteConfig[] = [
+  { id: 'laugh', label: '😂', cost: 0 },
+  { id: 'angry', label: '😡', cost: 0 },
+  { id: 'cry', label: '😢', cost: 0 },
+  { id: 'cool', label: '😎', cost: 0 },
+  { id: 'thumbsup', label: '👍', cost: 0 },
+  { id: 'fire', label: '🔥', cost: 100 },
+  { id: 'money', label: '💰', cost: 500 },
+  { id: 'trophy', label: '🏆', cost: 1_000 },
+  { id: 'crown', label: '👑', cost: 5_000 },
+  { id: 'rocket', label: '🚀', cost: 10_000 },
+];
+
 // ---- Bull Fight Game ----
 
 export type BullfightStage = 'idle' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'paused';
