@@ -31,8 +31,8 @@ import {
 } from '../../theme';
 import { useAuthStore } from '../../stores/authStore';
 import { api } from '../../services/api';
-
-import { getVipConfig, VipLevel } from '../../../../shared/types';
+import PremiumIcon from '../../components/PremiumIcon';
+import { getVipConfig, VIP_LEVELS, VipLevel } from '../../../../shared/types';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -413,24 +413,24 @@ function GameTile({ onPress, gradColors, gradLocations, style, children }: {
 }
 
 // ---------------------------------------------------------------------------
-// Quick Access shortcut data
+// Bottom Tab Bar config
 // ---------------------------------------------------------------------------
-const QUICK_ACCESS = [
-  { key: 'tournament', emoji: '🏆', label: 'Tourney', screen: 'Tournaments' },
-  { key: 'private', emoji: '🏠', label: 'Private', screen: 'PrivateRooms' },
-  { key: 'bonus', emoji: '🎁', label: 'Bonus', screen: 'Friends' },
-  { key: 'leaderboard', emoji: '📊', label: 'Ranks', screen: null },
+const BOTTOM_TABS = [
+  { key: 'play', label: 'Play', emoji: '🎮', screen: null, active: true },
+  { key: 'social', label: 'Social', emoji: '👥', screen: 'Friends' },
+  { key: 'shop', label: 'Shop', emoji: '🛒', screen: 'Store' },
+  { key: 'club', label: 'Club', emoji: '🏛️', screen: 'Clubs' },
+  { key: 'more', label: 'More', emoji: '☰', screen: 'Profile' },
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Bottom Tab Bar data
+// Quick Access Shortcuts
 // ---------------------------------------------------------------------------
-const TAB_ITEMS = [
-  { key: 'play', emoji: '🎮', label: 'Play', screen: null, active: true },
-  { key: 'social', emoji: '👥', label: 'Social', screen: 'Friends' },
-  { key: 'shop', emoji: '🛒', label: 'Shop', screen: 'Store' },
-  { key: 'club', emoji: '🏛️', label: 'Club', screen: 'Clubs' },
-  { key: 'more', emoji: '☰', label: 'More', screen: 'Profile' },
+const QUICK_ACCESS = [
+  { key: 'tournaments', label: 'Tourneys', emoji: '🏆', screen: 'Tournaments' },
+  { key: 'private', label: 'Private', emoji: '🏠', screen: 'PrivateRooms' },
+  { key: 'bonus', label: 'Bonus', emoji: '🎁', screen: null },
+  { key: 'leaderboard', label: 'Leaders', emoji: '📊', screen: null },
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -504,8 +504,30 @@ export default function LobbyScreen() {
     ])).start();
   }, []);
 
+  // Pulsing glow for main CTA
+  const ctaGlow = useRef(new Animated.Value(0.3)).current;
+  const ctaSweep = useRef(new Animated.Value(-1)).current;
+  const ctaShift = useRef(new Animated.Value(0)).current;
 
-  // Pulsing scale for the (+) add chips button
+  useEffect(() => {
+    Animated.loop(Animated.sequence([
+      Animated.timing(ctaGlow, { toValue: 0.55, duration: 1800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      Animated.timing(ctaGlow, { toValue: 0.2, duration: 1800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+    ])).start();
+
+    Animated.loop(Animated.sequence([
+      Animated.delay(3500),
+      Animated.timing(ctaSweep, { toValue: 2, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      Animated.timing(ctaSweep, { toValue: -1, duration: 0, useNativeDriver: true }),
+    ])).start();
+
+    Animated.loop(Animated.sequence([
+      Animated.timing(ctaShift, { toValue: 1, duration: 3000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      Animated.timing(ctaShift, { toValue: 0, duration: 3000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+    ])).start();
+  }, []);
+
+  // Pulsing scale for the (+) button
   const plusPulse = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     Animated.loop(Animated.sequence([
@@ -514,15 +536,28 @@ export default function LobbyScreen() {
     ])).start();
   }, []);
 
+  // Press scale for main button
+  const scaleHero = useRef(new Animated.Value(1)).current;
+  const heroIn = () => Animated.spring(scaleHero, { toValue: 0.96, useNativeDriver: true }).start();
+  const heroOut = () => Animated.spring(scaleHero, { toValue: 1, friction: 4, useNativeDriver: true }).start();
 
+  const winRate = user && user.gamesPlayed > 0 ? Math.round((user.gamesWon / user.gamesPlayed) * 100) : 0;
 
-  // VIP config for top bar
+  // VIP progress
   const vipLevel = (user?.vipLevel || 1) as VipLevel;
+  const vipXp = (user as any)?.vipXp ?? 0;
   const currentVipCfg = getVipConfig(vipLevel);
+  const nextVipIdx = VIP_LEVELS.findIndex(c => c.level === vipLevel) + 1;
+  const nextVipCfg = nextVipIdx < VIP_LEVELS.length ? VIP_LEVELS[nextVipIdx] : null;
+  const vipXpInLevel = vipXp - currentVipCfg.xpRequired;
+  const vipXpNeeded = nextVipCfg ? nextVipCfg.xpRequired - currentVipCfg.xpRequired : 1;
+  const vipProgress = nextVipCfg ? Math.min(1, Math.max(0, vipXpInLevel / vipXpNeeded)) : 1;
 
-  // ── Live activity tickers (for bull tile) ──
+  // ── Task 2: Live activity tickers ──
   const [livePlayers, setLivePlayers] = useState(247);
+  const [activePot, setActivePot] = useState(125.4);
   const playerTickScale = useRef(new Animated.Value(1)).current;
+  const potTickScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const playerInterval = setInterval(() => {
@@ -533,15 +568,28 @@ export default function LobbyScreen() {
       ]).start();
     }, 3500);
 
-    return () => clearInterval(playerInterval);
+    const potInterval = setInterval(() => {
+      setActivePot(Math.round((45 + Math.random() * 135) * 10) / 10);
+      Animated.sequence([
+        Animated.spring(potTickScale, { toValue: 1.15, useNativeDriver: true }),
+        Animated.spring(potTickScale, { toValue: 1, friction: 5, useNativeDriver: true }),
+      ]).start();
+    }, 4000);
+
+    return () => {
+      clearInterval(playerInterval);
+      clearInterval(potInterval);
+    };
   }, []);
+
+  const livePlayerCount = livePlayers;
 
   return (
     <View style={$.root}>
       {/* ═══ LAYER 1: Full-screen background ═══ */}
       <Image source={A.bg} style={$.bgImage} resizeMode="cover" />
 
-      {/* ═══ LAYER 1.5: Darken + desaturate overlay — tames gold/chips/cards ═══ */}
+      {/* ═══ LAYER 1.5: Darken + desaturate overlay ═══ */}
       <View style={$.bgDimOverlay} pointerEvents="none" />
       <LinearGradient
         colors={['rgba(8,11,22,0.45)', 'rgba(8,11,22,0.15)', 'rgba(8,11,22,0.45)'] as [string, string, ...string[]]}
@@ -573,11 +621,10 @@ export default function LobbyScreen() {
           colors={['transparent', 'rgba(88,166,255,0.025)'] as [string, string]}
           style={$.ambientBottom}
         />
-        {/* Center radial glow */}
         <View style={$.centerGlow} />
       </View>
 
-      {/* ═══ LAYER 4: Dark vignette edges — soft for depth ═══ */}
+      {/* ═══ LAYER 4: Dark vignette edges ═══ */}
       <View style={$.vignetteWrap} pointerEvents="none">
         <LinearGradient colors={['rgba(8,11,22,0.7)', 'transparent'] as [string, string]} style={$.vignetteTop} />
         <LinearGradient colors={['transparent', 'rgba(8,11,22,0.75)'] as [string, string]} style={$.vignetteBottom} />
@@ -601,65 +648,61 @@ export default function LobbyScreen() {
       {/* ═══ LAYER 5: UI content ═══ */}
       <View style={$.content}>
 
-        {/* ═══ TOP BAR — Compact DH Texas Poker style ═══ */}
+        {/* ═══ TOP BAR — DH Texas Poker style ═══ */}
         <Animated.View style={[$.topBar, { opacity: enterTop, transform: [{ translateY: enterTop.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }]}>
           <LinearGradient
-            colors={['rgba(10,14,22,0.88)', 'rgba(14,18,28,0.75)'] as [string, string]}
+            colors={['rgba(10,12,28,0.85)', 'rgba(14,16,32,0.75)'] as [string, string]}
             style={$.topBarGrad}
           >
-            {/* Left: Avatar → Profile */}
-            <TouchableOpacity style={$.topBarAvatarWrap} activeOpacity={0.7} onPress={() => nav.navigate('Profile' as any)}>
-              <LinearGradient colors={[C.purple, C.blue] as [string, string]} style={$.topBarAvatarGrad}>
-                <View style={$.topBarAvatarInner}>
-                  <Text style={$.topBarAvatarText}>{(user?.displayName || 'P')[0].toUpperCase()}</Text>
+            {/* Left: Avatar + Name */}
+            <TouchableOpacity style={$.topBarLeft} activeOpacity={0.7} onPress={() => nav.navigate('Profile' as any)}>
+              <View style={$.topBarAvatarWrap}>
+                <LinearGradient colors={[C.purple, C.blue] as [string, string]} style={$.topBarAvatarGrad}>
+                  <View style={$.topBarAvatarInner}>
+                    <Text style={$.topBarAvatarText}>{(user?.displayName || 'P')[0].toUpperCase()}</Text>
+                  </View>
+                </LinearGradient>
+                {/* VIP badge overlay */}
+                <View style={[$.topBarVipBadge, { backgroundColor: currentVipCfg.color }]}>
+                  <Text style={$.topBarVipBadgeText}>{vipLevel}</Text>
                 </View>
-              </LinearGradient>
-              {/* VIP badge overlay */}
-              <View style={[$.topBarVipBadge, { backgroundColor: currentVipCfg.color }]}>
-                <Text style={$.topBarVipBadgeText}>{user?.vipLevel || 1}</Text>
+              </View>
+              <View style={$.topBarNameCol}>
+                <Text style={$.topBarUsername} numberOfLines={1}>{user?.displayName || 'Player'}</Text>
+                <Text style={[$.topBarVipName, { color: currentVipCfg.color }]}>{currentVipCfg.emoji} {currentVipCfg.name}</Text>
               </View>
             </TouchableOpacity>
 
-            {/* Center-left: Name + VIP name */}
-            <View style={$.topBarInfo}>
-              <Text style={$.topBarName} numberOfLines={1}>{user?.displayName || 'Player'}</Text>
-              <Text style={[$.topBarVipName, { color: currentVipCfg.color }]}>
-                {currentVipCfg.emoji} {currentVipCfg.name}
-              </Text>
-            </View>
-
-            {/* Center: Chip count + Add button */}
-            <View style={$.topBarChips}>
+            {/* Center: Chip count */}
+            <TouchableOpacity style={$.topBarChips} activeOpacity={0.7} onPress={() => nav.navigate('Store' as any)}>
               <Image source={A.goldCoin} style={$.topBarCoinIcon} />
               <Text style={$.topBarChipText}>{chipStr(user?.chips || 0)}</Text>
-              <TouchableOpacity
-                style={$.topBarAddBtn}
-                activeOpacity={0.7}
-                onPress={() => nav.navigate('Store' as any)}
-              >
-                <Animated.View style={{ transform: [{ scale: plusPulse }] }}>
-                  <Text style={$.topBarAddText}>+</Text>
-                </Animated.View>
-              </TouchableOpacity>
-            </View>
+              <Animated.View style={[$.topBarAddBtn, { transform: [{ scale: plusPulse }] }]}>
+                <Text style={$.topBarAddBtnText}>+</Text>
+              </Animated.View>
+            </TouchableOpacity>
 
-            {/* Right: Quick icons */}
-            <View style={$.topBarIcons}>
-              <TouchableOpacity style={$.topBarIconBtn} onPress={() => nav.navigate('LuckySpin' as any)}>
-                <Text style={$.topBarIconEmoji}>🎰</Text>
+            {/* Right: Icon buttons row */}
+            <View style={$.topBarRight}>
+              <TouchableOpacity style={$.topBarIconBtn} activeOpacity={0.7}>
+                <View style={$.iconPlaceholder}>
+                  <Text style={$.iconEmoji}>🎰</Text>
+                </View>
               </TouchableOpacity>
-              <TouchableOpacity style={$.topBarIconBtn} onPress={() => nav.navigate('Missions' as any)}>
-                <Text style={$.topBarIconEmoji}>🎯</Text>
+              <TouchableOpacity style={$.topBarIconBtn} activeOpacity={0.7}>
+                <View style={$.iconPlaceholder}>
+                  <Text style={$.iconEmoji}>🎯</Text>
+                </View>
               </TouchableOpacity>
-              <TouchableOpacity style={$.topBarIconBtn} onPress={() => nav.navigate('Settings' as any)}>
-                <Image source={A.iconSettings} style={$.topBarSettingsIcon} resizeMode="contain" />
+              <TouchableOpacity style={$.topBarIconBtn} activeOpacity={0.7} onPress={() => nav.navigate('Settings' as any)}>
+                <Image source={A.iconSettings} style={$.topBarIconImg} resizeMode="contain" />
               </TouchableOpacity>
             </View>
           </LinearGradient>
         </Animated.View>
 
-        {/* ═══ ZONE 1: Game Mode Buttons (UNCHANGED) ═══ */}
-        <Animated.View style={{ opacity: enterHero, transform: [{ translateY: enterHero.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }], flex: 1, justifyContent: 'center' }}>
+        {/* ═══ ZONE 1: Game Mode Buttons (KEPT AS-IS) ═══ */}
+        <Animated.View style={{ opacity: enterHero, transform: [{ translateY: enterHero.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -672,16 +715,13 @@ export default function LobbyScreen() {
               gradColors={['rgba(20,14,30,0.95)', 'rgba(12,8,20,0.98)'] as [string, string]}
               style={$.bullBtn}
             >
-              {/* Background image */}
               <Image source={A.bullHero} style={$.tileBgImage} resizeMode="cover" />
-              {/* Unified dark vignette overlay */}
               <LinearGradient
                 colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.7)'] as [string, string, ...string[]]}
                 locations={[0, 0.35, 1]}
                 style={StyleSheet.absoluteFill as any}
                 pointerEvents="none"
               />
-              {/* Top-left gold rim light */}
               <LinearGradient
                 colors={['rgba(212,175,55,0.18)', 'transparent'] as [string, string]}
                 start={{ x: 0, y: 0 }}
@@ -689,9 +729,7 @@ export default function LobbyScreen() {
                 style={$.tileRimLight}
                 pointerEvents="none"
               />
-              {/* Inner top-edge highlight */}
               <View style={$.tileEdgeHighlight} />
-              {/* Content pinned to bottom */}
               <View style={$.tileContentBottom}>
                 <View style={$.tileLiveRow}>
                   <PulseDot />
@@ -709,16 +747,13 @@ export default function LobbyScreen() {
               gradColors={['rgba(8,20,12,0.95)', 'rgba(4,12,6,0.98)'] as [string, string]}
               style={$.pokerBtn}
             >
-              {/* Background image */}
               <Image source={A.pokerTile} style={$.tileBgImage} resizeMode="cover" />
-              {/* Unified dark vignette overlay */}
               <LinearGradient
                 colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.7)'] as [string, string, ...string[]]}
                 locations={[0, 0.35, 1]}
                 style={StyleSheet.absoluteFill as any}
                 pointerEvents="none"
               />
-              {/* Top-left gold rim light */}
               <LinearGradient
                 colors={['rgba(212,175,55,0.18)', 'transparent'] as [string, string]}
                 start={{ x: 0, y: 0 }}
@@ -726,9 +761,7 @@ export default function LobbyScreen() {
                 style={$.tileRimLight}
                 pointerEvents="none"
               />
-              {/* Inner top-edge highlight */}
               <View style={$.tileEdgeHighlight} />
-              {/* Content pinned to bottom */}
               <View style={$.tileContentBottom}>
                 <Text style={$.tileTitleMed}>Poker</Text>
                 <Text style={$.tileSubText}>Texas Hold'em</Text>
@@ -741,16 +774,13 @@ export default function LobbyScreen() {
               gradColors={['rgba(25,14,42,0.95)', 'rgba(15,8,28,0.98)'] as [string, string]}
               style={$.tournamentBtn}
             >
-              {/* Background image */}
               <Image source={A.champTile} style={$.tileBgImage} resizeMode="cover" />
-              {/* Unified dark vignette overlay */}
               <LinearGradient
                 colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.7)'] as [string, string, ...string[]]}
                 locations={[0, 0.35, 1]}
                 style={StyleSheet.absoluteFill as any}
                 pointerEvents="none"
               />
-              {/* Top-left gold rim light */}
               <LinearGradient
                 colors={['rgba(212,175,55,0.14)', 'transparent'] as [string, string]}
                 start={{ x: 0, y: 0 }}
@@ -758,9 +788,7 @@ export default function LobbyScreen() {
                 style={$.tileRimLight}
                 pointerEvents="none"
               />
-              {/* Inner top-edge highlight */}
               <View style={$.tileEdgeHighlight} />
-              {/* Content pinned to bottom */}
               <View style={[$.tileContentBottom, { opacity: 0.7 }]}>
                 <Text style={$.tileTitleMed}>Tournament</Text>
                 <Text style={$.tileSubText}>Coming Soon</Text>
@@ -770,13 +798,19 @@ export default function LobbyScreen() {
         </Animated.View>
 
         {/* ═══ QUICK ACCESS ROW ═══ */}
-        <Animated.View style={[$.quickAccessRow, { opacity: enterBottom, transform: [{ translateY: enterBottom.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
+        <Animated.View style={[$.quickAccessRow, { opacity: enterHero, transform: [{ translateY: enterHero.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
           {QUICK_ACCESS.map((item) => (
             <TouchableOpacity
               key={item.key}
-              style={$.quickAccessBtn}
+              style={$.quickAccessItem}
               activeOpacity={0.7}
-              onPress={() => item.screen ? nav.navigate(item.screen as any) : Alert.alert('Coming Soon', 'Leaderboard coming soon!')}
+              onPress={() => {
+                if (item.screen) {
+                  nav.navigate(item.screen as any);
+                } else if (item.key === 'bonus') {
+                  Alert.alert('Daily Bonus', 'Check back tomorrow for your daily reward!');
+                }
+              }}
             >
               <View style={$.quickAccessCircle}>
                 <Text style={$.quickAccessEmoji}>{item.emoji}</Text>
@@ -786,37 +820,49 @@ export default function LobbyScreen() {
           ))}
         </Animated.View>
 
-        {/* ═══ BOTTOM TAB BAR ═══ */}
-        <Animated.View style={[$.bottomTabBar, { opacity: enterBottom }]}>
-          <LinearGradient
-            colors={['rgba(10,14,22,0.92)', 'rgba(8,11,18,0.98)'] as [string, string]}
-            style={$.bottomTabBarGrad}
-          >
-            {TAB_ITEMS.map((tab) => (
-              <TouchableOpacity
-                key={tab.key}
-                style={$.tabItem}
-                activeOpacity={0.7}
-                onPress={() => tab.screen ? nav.navigate(tab.screen as any) : null}
-              >
-                <View style={[$.tabIconWrap, tab.active && $.tabIconWrapActive]}>
-                  <Text style={[$.tabEmoji, tab.active && $.tabEmojiActive]}>{tab.emoji}</Text>
-                </View>
-                <Text style={[$.tabLabel, tab.active && $.tabLabelActive]}>{tab.label}</Text>
-                {tab.active && <View style={$.tabActiveDot} />}
-              </TouchableOpacity>
-            ))}
-          </LinearGradient>
-        </Animated.View>
+        {/* Spacer to push bottom bar down */}
+        <View style={{ flex: 1 }} />
 
       </View>
+
+      {/* ═══ BOTTOM TAB BAR — fixed at bottom ═══ */}
+      <Animated.View style={[$.bottomTabBar, { opacity: enterBottom, transform: [{ translateY: enterBottom.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
+        <LinearGradient
+          colors={['rgba(10,12,28,0.92)', 'rgba(8,10,24,0.96)'] as [string, string]}
+          style={$.bottomTabBarGrad}
+        >
+          <View style={$.bottomTabBarTopBorder} />
+          <View style={$.bottomTabBarRow}>
+            {BOTTOM_TABS.map((tab) => {
+              const isActive = tab.key === 'play';
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={$.bottomTabItem}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (tab.screen) {
+                      nav.navigate(tab.screen as any);
+                    }
+                  }}
+                >
+                  {isActive && <View style={$.bottomTabGlow} />}
+                  <View style={[$.bottomTabIconWrap, isActive && $.bottomTabIconWrapActive]}>
+                    <Text style={[$.bottomTabEmoji, isActive && $.bottomTabEmojiActive]}>{tab.emoji}</Text>
+                  </View>
+                  <Text style={[$.bottomTabLabel, isActive && $.bottomTabLabelActive]}>{tab.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </LinearGradient>
+      </Animated.View>
     </View>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Styles — Layered: BG → FX → Vignette → Glass UI
-   Premium futuristic casino with neon purple/blue/gold
+   Styles
    ═══════════════════════════════════════════════════════════════════════ */
 const $ = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
@@ -889,7 +935,7 @@ const $ = StyleSheet.create({
     paddingTop: hp(44),
   },
 
-  /* ── Panel base (PanelSmall / PanelMedium / PanelLarge) ── */
+  /* ── Panel base ── */
   panelBase: { overflow: 'hidden' },
   panelImg: { borderRadius: wp(14) },
 
@@ -900,6 +946,161 @@ const $ = StyleSheet.create({
     borderRadius: wp(3),
     backgroundColor: C.neonRed,
     marginRight: wp(5),
+  },
+
+  /* ═══ TOP BAR — DH Texas Poker style ═══ */
+  topBar: {
+    marginHorizontal: -wp(20),
+    marginBottom: hp(8),
+  },
+  topBarGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: hp(56),
+    paddingHorizontal: wp(12),
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(212,175,55,0.15)',
+  } as any,
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+  } as any,
+  topBarAvatarWrap: {
+    width: wp(40),
+    height: wp(40),
+    borderRadius: wp(20),
+    overflow: 'visible',
+    ...Platform.select({
+      ios: { shadowColor: 'rgba(155,92,255,0.5)', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 8 },
+      android: { elevation: 4 },
+    }),
+  } as any,
+  topBarAvatarGrad: {
+    flex: 1,
+    borderRadius: wp(20),
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2,
+  },
+  topBarAvatarInner: {
+    flex: 1,
+    width: '100%',
+    borderRadius: wp(18),
+    backgroundColor: C.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  } as any,
+  topBarAvatarText: {
+    color: C.txt,
+    fontSize: fs(16),
+    fontWeight: '900',
+  },
+  topBarVipBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: wp(16),
+    height: wp(16),
+    borderRadius: wp(8),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: C.bg,
+  },
+  topBarVipBadgeText: {
+    color: '#FFFFFF',
+    fontSize: fs(7),
+    fontWeight: '900',
+  },
+  topBarNameCol: {
+    marginLeft: wp(8),
+    flex: 1,
+    minWidth: 0,
+  },
+  topBarUsername: {
+    color: C.txt,
+    fontSize: fs(13),
+    fontWeight: '800',
+  },
+  topBarVipName: {
+    fontSize: fs(9),
+    fontWeight: '700',
+    marginTop: 1,
+  },
+
+  /* Top Bar: Chip count */
+  topBarChips: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(212,175,55,0.1)',
+    borderRadius: 16,
+    paddingLeft: wp(6),
+    paddingRight: wp(4),
+    paddingVertical: hp(4),
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.2)',
+    marginHorizontal: wp(8),
+  } as any,
+  topBarCoinIcon: {
+    width: wp(18),
+    height: wp(18),
+  },
+  topBarChipText: {
+    color: C.gold,
+    fontSize: fs(13),
+    fontWeight: '900',
+    marginLeft: wp(4),
+    textShadowColor: 'rgba(212,175,55,0.4)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
+  },
+  topBarAddBtn: {
+    width: wp(20),
+    height: wp(20),
+    borderRadius: wp(10),
+    backgroundColor: C.neonGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: wp(4),
+  },
+  topBarAddBtnText: {
+    color: '#FFFFFF',
+    fontSize: fs(14),
+    fontWeight: '900',
+    marginTop: -1,
+  },
+
+  /* Top Bar: Right icon buttons */
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: wp(6),
+  } as any,
+  topBarIconBtn: {
+    width: wp(32),
+    height: wp(32),
+    borderRadius: wp(10),
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  topBarIconImg: {
+    width: wp(18),
+    height: wp(18),
+    tintColor: C.muted,
+  } as any,
+
+  /* Icon placeholder for missing assets */
+  iconPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconEmoji: {
+    fontSize: fs(14),
   },
 
   /* ═══ ZONE 1: Game Mode Buttons ═══ */
@@ -915,7 +1116,7 @@ const $ = StyleSheet.create({
     paddingVertical: hp(6),
   },
 
-  /* ── Shared tile base (unified shadow/border/glow system) ── */
+  /* ── Shared tile base ── */
   bullBtn: {
     width: wp(260),
     height: SH * 0.28,
@@ -1069,223 +1270,104 @@ const $ = StyleSheet.create({
     color: '#1a1a2e',
   },
 
-  /* ═══ TOP BAR — Compact DH Texas Poker style ═══ */
-  topBar: {
-    marginHorizontal: -wp(20),
-    zIndex: 10,
-  },
-  topBarGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: wp(12),
-    paddingVertical: hp(6),
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(212,175,55,0.12)',
-  },
-  topBarAvatarWrap: {
-    width: wp(40),
-    height: wp(40),
-    borderRadius: wp(20),
-    overflow: 'visible',
-  },
-  topBarAvatarGrad: {
-    flex: 1,
-    borderRadius: wp(20),
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 2,
-  },
-  topBarAvatarInner: {
-    flex: 1,
-    width: '100%',
-    borderRadius: wp(18),
-    backgroundColor: C.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topBarAvatarText: {
-    color: C.txt,
-    fontSize: fs(16),
-    fontWeight: '900',
-  },
-  topBarVipBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: wp(16),
-    height: wp(16),
-    borderRadius: wp(8),
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: C.bg,
-  },
-  topBarVipBadgeText: {
-    color: '#FFF',
-    fontSize: fs(8),
-    fontWeight: '900',
-  },
-  topBarInfo: {
-    marginLeft: wp(8),
-    flex: 1,
-    minWidth: 0,
-  },
-  topBarName: {
-    color: C.txt,
-    fontSize: fs(13),
-    fontWeight: '800',
-  },
-  topBarVipName: {
-    fontSize: fs(9),
-    fontWeight: '700',
-    marginTop: 1,
-  },
-  topBarChips: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 14,
-    paddingHorizontal: wp(8),
-    paddingVertical: hp(4),
-    marginLeft: wp(6),
-    borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.2)',
-  } as any,
-  topBarCoinIcon: {
-    width: wp(16),
-    height: wp(16),
-    marginRight: wp(4),
-  },
-  topBarChipText: {
-    color: C.gold,
-    fontSize: fs(13),
-    fontWeight: '900',
-    textShadowColor: 'rgba(212,175,55,0.4)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 6,
-  },
-  topBarAddBtn: {
-    width: wp(22),
-    height: wp(22),
-    borderRadius: wp(11),
-    backgroundColor: '#26D95C',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: wp(6),
-    ...Platform.select({
-      ios: { shadowColor: '#26D95C', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6 },
-      android: { elevation: 4 },
-    }),
-  } as any,
-  topBarAddText: {
-    color: '#FFF',
-    fontSize: fs(16),
-    fontWeight: '900',
-    lineHeight: fs(18),
-    marginTop: -1,
-  },
-  topBarIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: wp(8),
-    gap: wp(4),
-  } as any,
-  topBarIconBtn: {
-    width: wp(30),
-    height: wp(30),
-    borderRadius: wp(15),
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  topBarIconEmoji: {
-    fontSize: fs(14),
-  },
-  topBarSettingsIcon: {
-    width: wp(16),
-    height: wp(16),
-    tintColor: C.muted,
-  } as any,
-
   /* ═══ QUICK ACCESS ROW ═══ */
   quickAccessRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: wp(16),
+    gap: wp(20),
+    marginTop: hp(16),
     paddingVertical: hp(8),
-    marginBottom: hp(4),
   } as any,
-  quickAccessBtn: {
+  quickAccessItem: {
     alignItems: 'center',
   },
   quickAccessCircle: {
-    width: wp(48),
-    height: wp(48),
-    borderRadius: wp(24),
-    backgroundColor: 'rgba(14,18,34,0.75)',
+    width: wp(52),
+    height: wp(52),
+    borderRadius: wp(26),
+    backgroundColor: 'rgba(14,17,34,0.75)',
     borderWidth: 1.5,
     borderColor: 'rgba(212,175,55,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
-      ios: { shadowColor: 'rgba(212,175,55,0.3)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 8 },
+      ios: { shadowColor: 'rgba(212,175,55,0.15)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 6 },
       android: { elevation: 4 },
     }),
-  } as any,
+  },
   quickAccessEmoji: {
     fontSize: fs(20),
   },
   quickAccessLabel: {
     color: C.muted,
-    fontSize: fs(8),
+    fontSize: fs(9),
     fontWeight: '700',
-    marginTop: hp(3),
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    marginTop: hp(4),
+    textAlign: 'center',
   },
 
   /* ═══ BOTTOM TAB BAR ═══ */
   bottomTabBar: {
-    marginHorizontal: -wp(20),
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   bottomTabBarGrad: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-    paddingTop: hp(8),
-    paddingBottom: hp(20),
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(212,175,55,0.1)',
-  } as any,
-  tabItem: {
-    alignItems: 'center',
-    minWidth: wp(56),
+    paddingBottom: hp(24),
+    paddingTop: hp(6),
   },
-  tabIconWrap: {
-    width: wp(36),
-    height: wp(36),
-    borderRadius: wp(18),
+  bottomTabBarTopBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(212,175,55,0.2)',
+  },
+  bottomTabBarRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: wp(8),
+  } as any,
+  bottomTabItem: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tabIconWrapActive: {
-    backgroundColor: 'rgba(212,175,55,0.12)',
+    paddingVertical: hp(4),
+    minWidth: wp(52),
+    position: 'relative',
+  } as any,
+  bottomTabGlow: {
+    position: 'absolute',
+    top: -hp(4),
+    width: wp(40),
+    height: wp(40),
+    borderRadius: wp(20),
+    backgroundColor: 'rgba(212,175,55,0.08)',
     ...Platform.select({
-      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 10 },
+      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 12 },
       android: { elevation: 4 },
     }),
   } as any,
-  tabEmoji: {
+  bottomTabIconWrap: {
+    width: wp(28),
+    height: wp(28),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomTabIconWrapActive: {
+    // active state — gold tint applied via text style
+  },
+  bottomTabEmoji: {
     fontSize: fs(18),
     opacity: 0.5,
   },
-  tabEmojiActive: {
+  bottomTabEmojiActive: {
     opacity: 1,
   },
-  tabLabel: {
+  bottomTabLabel: {
     color: C.muted,
     fontSize: fs(9),
     fontWeight: '700',
@@ -1293,19 +1375,12 @@ const $ = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  tabLabelActive: {
+  bottomTabLabelActive: {
     color: C.gold,
+    textShadowColor: 'rgba(212,175,55,0.4)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 4,
   },
-  tabActiveDot: {
-    width: wp(4),
-    height: wp(4),
-    borderRadius: wp(2),
-    backgroundColor: C.gold,
-    marginTop: hp(3),
-    ...Platform.select({
-      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4 },
-    }),
-  } as any,
 
   /* ── Glassmorphism ── */
   glassOuter: {
