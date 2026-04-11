@@ -134,7 +134,7 @@ export default function GradientButton({
     const btnHeight = btnWidth / 4.5;
 
     return (
-      <Animated.View style={[{ transform: [{ scale: scaleAnim }], alignItems: 'center' as const, alignSelf: 'center' as const, width: btnWidth, marginTop: -btnHeight * 0.2 + hp(2) }, disabled && s.disabled, style]}>
+      <Animated.View style={[{ transform: [{ scale: scaleAnim }], alignItems: 'center' as const, alignSelf: 'center' as const, width: btnWidth, marginTop: -btnHeight * 0.2 + hp(2), backgroundColor: 'transparent' }, disabled && s.disabled, style]}>
         <Animated.View
           style={{
             position: 'absolute',
@@ -160,7 +160,7 @@ export default function GradientButton({
             }),
           }}
         />
-          <View style={{ width: btnWidth, height: btnHeight, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <View style={{ width: btnWidth, height: btnHeight, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: 'transparent' }}>
             <Pressable
               onPress={onPress}
               onPressIn={() => {
@@ -172,7 +172,8 @@ export default function GradientButton({
                 onPressOut();
               }}
               disabled={disabled || loading}
-              style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}
+              android_ripple={null}
+              style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
             >
               {/* Button asset fills container */}
               <Image
@@ -260,7 +261,7 @@ export default function GradientButton({
   const primaryHeight = wp(224) / 4.5;
 
   return (
-      <Animated.View style={[{ transform: [{ scale: scaleAnim }], alignItems: 'center' as const, alignSelf: 'center' as const, width: primaryWidth, marginTop: -primaryHeight * 0.2 + hp(2) }, disabled && s.disabled, style]}>
+      <Animated.View style={[{ transform: [{ scale: scaleAnim }], alignItems: 'center' as const, alignSelf: 'center' as const, width: primaryWidth, marginTop: -primaryHeight * 0.2 + hp(2), backgroundColor: 'transparent' }, disabled && s.disabled, style]}>
       <Animated.View
         style={{
           position: 'absolute',
@@ -286,7 +287,7 @@ export default function GradientButton({
           }),
         }}
       />
-      <View style={{ width: primaryWidth, height: primaryHeight, alignItems: 'center', justifyContent: 'center', paddingBottom: primaryHeight * 0.06, overflow: 'hidden' }}>
+      <View style={{ width: primaryWidth, height: primaryHeight, alignItems: 'center', justifyContent: 'center', paddingBottom: primaryHeight * 0.06, overflow: 'hidden', backgroundColor: 'transparent' }}>
         <Pressable
           onPress={onPress}
           onPressIn={() => {
@@ -298,7 +299,8 @@ export default function GradientButton({
             onPressOut();
           }}
           disabled={disabled || loading}
-          style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}
+          android_ripple={null}
+          style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' }}
         >
           <Image
             source={assetPressed ? BTN_ASSET_ACTIVE : BTN_ASSET}
