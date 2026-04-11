@@ -1210,9 +1210,8 @@ const $ = StyleSheet.create({
 
   /* Profile Left: Avatar + Level */
   profileLeft: {
-    width: '30%',
+    width: '22%',
     alignItems: 'flex-start',
-    paddingLeft: wp(4),
   } as any,
   profileAvatarWrap: {
     width: wp(64),
@@ -1282,9 +1281,9 @@ const $ = StyleSheet.create({
 
   /* Profile Center: Name + Chips */
   profileCenter: {
-    width: '40%',
-    paddingLeft: 0,
-    paddingRight: wp(8),
+    width: '46%',
+    paddingLeft: wp(6),
+    paddingRight: wp(4),
   } as any,
   profileNameRow: {
     flexDirection: 'row',
@@ -1338,7 +1337,7 @@ const $ = StyleSheet.create({
 
   /* Profile Right: Career Stats */
   profileRight: {
-    width: '30%',
+    width: '32%',
     alignItems: 'flex-end',
   } as any,
   careerLabel: {
