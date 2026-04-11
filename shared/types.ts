@@ -199,6 +199,27 @@ export const EMOTE_LIST: EmoteConfig[] = [
   { id: 'rocket', label: '🚀', cost: 10_000 },
 ];
 
+// ---- Table Gifts ----
+export interface GiftConfig {
+  id: string;
+  label: string;
+  emoji: string;
+  cost: number;
+}
+
+export const TABLE_GIFT_LIST: GiftConfig[] = [
+  { id: 'beer', label: 'Beer', emoji: '🍺', cost: 500 },
+  { id: 'cigar', label: 'Cigar', emoji: '🚬', cost: 1_000 },
+  { id: 'rose', label: 'Rose', emoji: '🌹', cost: 2_000 },
+  { id: 'diamond', label: 'Diamond', emoji: '💎', cost: 5_000 },
+  { id: 'car', label: 'Sports Car', emoji: '🏎️', cost: 10_000 },
+  { id: 'yacht', label: 'Yacht', emoji: '🛥️', cost: 50_000 },
+  { id: 'gift_crown', label: 'Crown', emoji: '👑', cost: 100_000 },
+  { id: 'fireworks', label: 'Fireworks', emoji: '🎆', cost: 500_000 },
+];
+
+export type TableGiftId = typeof TABLE_GIFT_LIST[number]['id'];
+
 // ---- Bull Fight Game ----
 
 export type BullfightStage = 'idle' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'paused';
@@ -413,6 +434,12 @@ export enum SocketEvent {
 
   // Gifts
   GIFT_RECEIVED = 'gift_received',
+
+  // Table Emotes & Gifts (poker/bullfight)
+  TABLE_EMOTE = 'table:emote',
+  TABLE_EMOTE_BROADCAST = 'table:emote_broadcast',
+  TABLE_GIFT = 'table:gift',
+  TABLE_GIFT_BROADCAST = 'table:gift_broadcast',
 
   // Tournaments (placeholder for Phase 3)
   TOURNAMENT_LIST = 'tournament:list',

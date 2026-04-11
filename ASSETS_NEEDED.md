@@ -130,6 +130,58 @@ Placeholder emoji icons are currently used in-code. Replace with proper assets w
 | `avatars/default_female_*.png` | Default female avatars (1-6) | 80x80 @3x | 🔲 |
 | `avatars/avatar_frame_vip_*.png` | VIP avatar frames per level | 90x90 @3x | 🔲 |
 
+## Poker Table Emotes (Animated)
+
+These are shown as floating animations above a player's seat when they send an emote. Ideally Lottie JSON or animated GIF. Fallback: emoji text with scale+fade animation.
+
+| Asset | Emote ID | Emoji Placeholder | Cost | Format | Status |
+|-------|----------|-------------------|------|--------|--------|
+| `emotes/laugh.json` | laugh | 😂 | Free | Lottie/GIF | 🔲 |
+| `emotes/angry.json` | angry | 😡 | Free | Lottie/GIF | 🔲 |
+| `emotes/cry.json` | cry | 😢 | Free | Lottie/GIF | 🔲 |
+| `emotes/cool.json` | cool | 😎 | Free | Lottie/GIF | 🔲 |
+| `emotes/thumbsup.json` | thumbsup | 👍 | Free | Lottie/GIF | 🔲 |
+| `emotes/fire.json` | fire | 🔥 | 100 chips | Lottie/GIF | 🔲 |
+| `emotes/money.json` | money | 💰 | 500 chips | Lottie/GIF | 🔲 |
+| `emotes/trophy.json` | trophy | 🏆 | 1,000 chips | Lottie/GIF | 🔲 |
+| `emotes/crown.json` | crown | 👑 | 5,000 chips | Lottie/GIF | 🔲 |
+| `emotes/rocket.json` | rocket | 🚀 | 10,000 chips | Lottie/GIF | 🔲 |
+
+**Design notes**: Each animation should be ~2s long, loop once, 200x200px canvas. Premium emotes (fire+) should have particle effects. Style: casino/neon glow aesthetic.
+
+## Gift Animations (Poker Table)
+
+Animated gifts that fly from sender's seat to receiver's seat. Shown as a projectile arc + landing burst animation. Lottie preferred.
+
+| Asset | Gift ID | Description | Cost | Format | Status |
+|-------|---------|-------------|------|--------|--------|
+| `gifts/beer.json` | beer | Beer mug tossed across table | 500 chips | Lottie/GIF | 🔲 |
+| `gifts/cigar.json` | cigar | Lit cigar with smoke trail | 1,000 chips | Lottie/GIF | 🔲 |
+| `gifts/rose.json` | rose | Red rose with petals | 2,000 chips | Lottie/GIF | 🔲 |
+| `gifts/diamond.json` | diamond | Sparkling diamond | 5,000 chips | Lottie/GIF | 🔲 |
+| `gifts/car.json` | car | Sports car driving across | 10,000 chips | Lottie/GIF | 🔲 |
+| `gifts/yacht.json` | yacht | Luxury yacht | 50,000 chips | Lottie/GIF | 🔲 |
+| `gifts/crown.json` | crown | Golden crown with gems | 100,000 chips | Lottie/GIF | 🔲 |
+| `gifts/fireworks.json` | fireworks | Full-screen fireworks burst | 500,000 chips | Lottie/GIF | 🔲 |
+
+**Design notes**: Each gift has 2 animations:
+1. **Projectile** (~1s): Item flies in arc from sender → receiver seat
+2. **Landing burst** (~1.5s): Explosion/sparkle effect on receiver
+Premium gifts (diamond+) should have screen-wide particle effects. Style: flashy casino, gold sparkles.
+
+## Gift Thumbnails (for selection UI)
+
+| Asset | Description | Size | Status |
+|-------|------------|------|--------|
+| `gifts/thumb_beer.png` | Beer gift thumbnail | 48x48 @3x | 🔲 |
+| `gifts/thumb_cigar.png` | Cigar gift thumbnail | 48x48 @3x | 🔲 |
+| `gifts/thumb_rose.png` | Rose gift thumbnail | 48x48 @3x | 🔲 |
+| `gifts/thumb_diamond.png` | Diamond gift thumbnail | 48x48 @3x | 🔲 |
+| `gifts/thumb_car.png` | Car gift thumbnail | 48x48 @3x | 🔲 |
+| `gifts/thumb_yacht.png` | Yacht gift thumbnail | 48x48 @3x | 🔲 |
+| `gifts/thumb_crown.png` | Crown gift thumbnail | 48x48 @3x | 🔲 |
+| `gifts/thumb_fireworks.png` | Fireworks gift thumbnail | 48x48 @3x | 🔲 |
+
 ---
 
 ## Design Guidelines
