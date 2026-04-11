@@ -235,11 +235,16 @@ function ChatModal({ visible, friend, onClose }: {
 // ---------------------------------------------------------------------------
 export default function FriendsScreen() {
   const nav = useNavigation<any>();
-  const [tab, setTab] = useState<'friends' | 'pending' | 'search'>('friends');
+  const [tab, setTab] = useState<'friends' | 'pending' | 'search' | 'mail'>('friends');
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pending, setPending] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Mail
+  const [mailItems, setMailItems] = useState<any[]>([]);
+  const [unreadMail, setUnreadMail] = useState(0);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
 
   // Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -253,12 +258,15 @@ export default function FriendsScreen() {
   // ---- Data loading ----
   const loadData = useCallback(async () => {
     try {
-      const [friendsData, pendingData] = await Promise.all([
+      const [friendsData, pendingData, mailData] = await Promise.all([
         api.getFriendsList(),
         api.getPendingRequests(),
+        api.getMail().catch(() => ({ mail: [], unreadCount: 0 })),
       ]);
       setFriends(friendsData ?? []);
       setPending(pendingData ?? []);
+      setMailItems(mailData.mail ?? []);
+      setUnreadMail(mailData.unreadCount ?? 0);
     } catch (e) {
       console.warn('Failed to load friends:', e);
     } finally {
@@ -400,20 +408,115 @@ export default function FriendsScreen() {
     </View>
   );
 
+  // ---- Mail helpers ----
+  const MAIL_ICONS: Record<string, string> = {
+    daily_bonus: '🎁', streak_bonus: '🔥', system: '📢',
+    gift: '🎁', tournament_reward: '🏆', welcome: '🎉',
+  };
+
+  const timeAgo = (iso: string) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return days === 1 ? 'Yesterday' : `${days}d ago`;
+  };
+
+  const handleClaimMail = async (id: string) => {
+    setClaimingId(id);
+    try {
+      await api.claimMail(id);
+      setMailItems(prev => prev.map(m => m.id === id ? { ...m, claimed: true } : m));
+      setUnreadMail(prev => Math.max(0, prev - 1));
+    } catch { Alert.alert('Error', 'Could not claim reward.'); }
+    finally { setClaimingId(null); }
+  };
+
+  const handleClaimAll = async () => {
+    try {
+      await api.claimAllMail();
+      setMailItems(prev => prev.map(m => m.chips && !m.claimed ? { ...m, claimed: true } : m));
+      setUnreadMail(0);
+      Alert.alert('✅ All Claimed', 'All rewards have been collected!');
+    } catch { Alert.alert('Error', 'Could not claim all.'); }
+  };
+
+  const handleDeleteMail = async (id: string) => {
+    try {
+      await api.deleteMail(id);
+      setMailItems(prev => prev.filter(m => m.id !== id));
+    } catch { Alert.alert('Error', 'Could not delete mail.'); }
+  };
+
+  const unclaimedCount = mailItems.filter(m => m.chips > 0 && !m.claimed).length;
+
+  const renderMailItem = ({ item }: { item: any }) => (
+    <View style={[s.card, !item.read && { borderLeftWidth: 3, borderLeftColor: colors.primary }]}>
+      <View style={s.cardContent}>
+        <View style={[s.avatarCircle, { borderColor: 'rgba(212,175,55,0.3)' }]}>
+          <Text style={{ fontSize: fs(20) }}>{MAIL_ICONS[item.mailType] || '📩'}</Text>
+        </View>
+        <View style={[s.infoBlock, { marginLeft: wp(12) }]}>
+          <Text style={s.friendName}>{item.title}</Text>
+          <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: fs(12), marginTop: hp(2) }} numberOfLines={2}>
+            {item.body}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: hp(4), gap: wp(8) }}>
+            {item.chips > 0 && (
+              <Text style={{ color: colors.primary, fontSize: fs(13), fontWeight: '800' }}>
+                💰 {item.chips.toLocaleString()}
+              </Text>
+            )}
+            <Text style={{ color: 'rgba(255,255,255,0.25)', fontSize: fs(10) }}>{timeAgo(item.createdAt)}</Text>
+          </View>
+        </View>
+        <View style={s.actions}>
+          {item.chips > 0 && !item.claimed ? (
+            <TouchableOpacity
+              onPress={() => handleClaimMail(item.id)}
+              disabled={claimingId === item.id}
+              activeOpacity={0.7}
+            >
+              <LinearGradient
+                colors={claimingId === item.id ? ['#555', '#444'] as [string, string] : ['#E8C84A', '#D4AF37'] as [string, string]}
+                style={{ borderRadius: 20, paddingHorizontal: wp(14), paddingVertical: hp(8) }}
+              >
+                <Text style={{ color: '#0A0E1A', fontSize: fs(11), fontWeight: '900', letterSpacing: 1 }}>
+                  {claimingId === item.id ? '...' : 'CLAIM'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : item.claimed ? (
+            <View style={{ backgroundColor: 'rgba(34,197,94,0.15)', borderRadius: 12, paddingHorizontal: wp(10), paddingVertical: hp(4) }}>
+              <Text style={{ color: '#22C55E', fontSize: fs(10), fontWeight: '700' }}>✓ Claimed</Text>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => handleDeleteMail(item.id)} hitSlop={8}>
+              <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: fs(18) }}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+
   const renderEmpty = () => (
     <View style={s.emptyState}>
-      <PremiumIcon name={tab === 'pending' ? 'inbox' : tab === 'search' ? 'search' : 'users'} size={40} />
+      <PremiumIcon name={tab === 'mail' ? 'inbox' : tab === 'pending' ? 'inbox' : tab === 'search' ? 'search' : 'users'} size={40} />
       <Text style={s.emptyTitle}>
-        {tab === 'pending' ? 'No Pending Requests' : tab === 'search' ? 'Find New Players' : 'No Friends Yet'}
+        {tab === 'mail' ? 'No Mail Yet' : tab === 'pending' ? 'No Pending Requests' : tab === 'search' ? 'Find New Players' : 'No Friends Yet'}
       </Text>
       <Text style={s.emptyText}>
-        {tab === 'pending' ? 'Friend requests will appear here' : tab === 'search' ? 'Search by username to add friends' : 'Invite players to build your crew'}
+        {tab === 'mail' ? 'Daily bonuses and rewards will appear here' : tab === 'pending' ? 'Friend requests will appear here' : tab === 'search' ? 'Search by username to add friends' : 'Invite players to build your crew'}
       </Text>
     </View>
   );
 
-  const listData = tab === 'friends' ? sorted : tab === 'pending' ? pending : searchResults;
-  const renderItem = tab === 'friends' ? renderFriend : tab === 'pending' ? renderPending : renderSearchResult;
+  const listData = tab === 'friends' ? sorted : tab === 'pending' ? pending : tab === 'mail' ? mailItems : searchResults;
+  const renderItem = tab === 'friends' ? renderFriend : tab === 'pending' ? renderPending : tab === 'mail' ? renderMailItem : renderSearchResult;
 
   return (
     <View style={s.container}>
@@ -441,8 +544,23 @@ export default function FriendsScreen() {
       <View style={s.tabRow}>
         <TabButton label="Crew" count={friends.length} active={tab === 'friends'} onPress={() => setTab('friends')} />
         <TabButton label="Requests" count={pending.length} active={tab === 'pending'} onPress={() => setTab('pending')} />
+        <TabButton label="Mail" count={unreadMail || undefined} active={tab === 'mail'} onPress={() => setTab('mail')} />
         <TabButton label="Find" active={tab === 'search'} onPress={() => setTab('search')} />
       </View>
+
+      {/* Claim All banner */}
+      {tab === 'mail' && unclaimedCount > 0 && (
+        <TouchableOpacity onPress={handleClaimAll} activeOpacity={0.8}>
+          <LinearGradient
+            colors={['rgba(212,175,55,0.15)', 'rgba(212,175,55,0.05)'] as [string, string]}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: hp(10), borderRadius: 12, marginBottom: hp(12), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)' }}
+          >
+            <Text style={{ color: colors.primary, fontSize: fs(13), fontWeight: '800', letterSpacing: 1 }}>
+              CLAIM ALL ({unclaimedCount})
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
 
       {/* Search Input */}
       {tab === 'search' && (

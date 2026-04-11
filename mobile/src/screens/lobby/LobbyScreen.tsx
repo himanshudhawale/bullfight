@@ -484,14 +484,6 @@ export default function LobbyScreen() {
     return () => sub.remove();
   }, []);
 
-  // Mail unread badge
-  const [unreadMail, setUnreadMail] = useState(0);
-  useFocusEffect(
-    useCallback(() => {
-      api.getMail().then((res: any) => setUnreadMail(res.unreadCount || 0)).catch(() => {});
-    }, [])
-  );
-
   // FX overlay subtle drift animation
   const fxDrift = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -627,18 +619,6 @@ export default function LobbyScreen() {
       clearInterval(potInterval);
     };
   }, []);
-
-  // ── Mail icon pulse animation ──
-  const mailPulse = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (unreadMail > 0) {
-      Animated.loop(Animated.sequence([
-        Animated.timing(mailPulse, { toValue: 1.15, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(mailPulse, { toValue: 1, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])).start();
-    }
-  }, [unreadMail]);
 
   return (
     <View style={$.root}>
@@ -930,23 +910,6 @@ export default function LobbyScreen() {
             ))}
           </View>
 
-          {/* Mail / Inbox button */}
-          <TouchableOpacity activeOpacity={0.85} onPress={() => nav.navigate('Inbox' as any)} style={$.mailBtnWrap}>
-            <Animated.View style={[$.mailBtn, unreadMail > 0 && { transform: [{ scale: mailPulse }] }]}>
-              <LinearGradient
-                colors={['rgba(14,18,28,0.92)', 'rgba(18,14,26,0.88)'] as [string, string]}
-                style={$.mailBtnGrad}
-              >
-                <Text style={$.mailIcon}>✉️</Text>
-                <Text style={$.mailLabel}>MAIL</Text>
-                {unreadMail > 0 && (
-                  <View style={$.mailBadge}>
-                    <Text style={$.mailBadgeText}>{unreadMail > 9 ? '9+' : unreadMail}</Text>
-                  </View>
-                )}
-              </LinearGradient>
-            </Animated.View>
-          </TouchableOpacity>
         </Animated.View>
 
       </View>
@@ -1605,49 +1568,5 @@ const $ = StyleSheet.create({
     height: '25%',
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
-  },
-
-  /* ── Bonus card ── */
-  mailBtnWrap: {
-    alignSelf: 'center',
-    marginBottom: hp(8),
-  },
-  mailBtn: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  mailBtnGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: hp(10),
-    paddingHorizontal: wp(20),
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.2)',
-  } as any,
-  mailIcon: {
-    fontSize: fs(20),
-    marginRight: wp(8),
-  },
-  mailLabel: {
-    color: '#F0E6D3',
-    fontSize: fs(13),
-    fontWeight: '800' as const,
-    letterSpacing: 2,
-  },
-  mailBadge: {
-    backgroundColor: '#EF4444',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    marginLeft: wp(8),
-    paddingHorizontal: 4,
-  },
-  mailBadgeText: {
-    color: '#FFF',
-    fontSize: fs(10),
-    fontWeight: '900' as const,
   },
 });
