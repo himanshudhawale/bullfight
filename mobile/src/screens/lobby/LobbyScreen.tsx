@@ -1021,7 +1021,7 @@ const $ = StyleSheet.create({
   /* ── Shared tile base (unified shadow/border/glow system) ── */
   bullBtn: {
     width: wp(260),
-    height: hp(260),
+    height: SH * 0.28,
     borderWidth: 1.5,
     borderColor: 'rgba(212,175,55,0.35)',
     ...Platform.select({
@@ -1032,7 +1032,7 @@ const $ = StyleSheet.create({
   } as any,
   pokerBtn: {
     width: wp(220),
-    height: hp(260),
+    height: SH * 0.28,
     borderWidth: 1.5,
     borderColor: 'rgba(212,175,55,0.25)',
     ...Platform.select({
@@ -1043,7 +1043,7 @@ const $ = StyleSheet.create({
   } as any,
   tournamentBtn: {
     width: wp(180),
-    height: hp(260),
+    height: SH * 0.28,
     borderWidth: 1.5,
     borderColor: 'rgba(212,175,55,0.2)',
     ...Platform.select({
