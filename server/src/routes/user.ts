@@ -351,9 +351,4 @@ router.post('/bonus/package', authMiddleware, async (req: AuthRequest, res: Resp
   }
 });
 
-// ---- Buy Chips (disabled for free launch v1.0) ----
-router.post('/chips/buy', authMiddleware, async (_req: AuthRequest, res: Response) => {
-  res.status(403).json({ error: 'Chip purchases coming soon! Enjoy your free chips for now.' });
-});
-
 export default router;

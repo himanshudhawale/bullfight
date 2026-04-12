@@ -433,16 +433,12 @@ function BonusCTA({
 /* ── VIP upsell footer ────────────────────────────────────────────── */
 
 function VipUpsellFooter({ vipLevel, bonusMult }: { vipLevel: number; bonusMult: number }) {
+  if (vipLevel <= 1) return null;
   return (
     <View style={st.upsellWrap}>
-      {vipLevel > 1 && (
-        <Text style={st.upsellVip}>
-          VIP {vipLevel}: +{Math.round((bonusMult - 1) * 100)}% bonus
-        </Text>
-      )}
-      <Pressable onPress={() => Alert.alert('Coming Soon', 'Watch Ad \u00D72 is coming in a future update!')}>
-        <Text style={st.upsellAd}>Watch Ad {'\u00D7'}2</Text>
-      </Pressable>
+      <Text style={st.upsellVip}>
+        VIP {vipLevel}: +{Math.round((bonusMult - 1) * 100)}% bonus
+      </Text>
     </View>
   );
 }
@@ -1633,12 +1629,6 @@ const st = StyleSheet.create({
     fontSize: fs(9),
     color: '#BC8CFF',
     fontWeight: '600',
-  },
-  upsellAd: {
-    fontSize: fs(9),
-    color: colors.textMuted,
-    fontWeight: '600',
-    textDecorationLine: 'underline' as const,
   },
 
   /* Store link */
