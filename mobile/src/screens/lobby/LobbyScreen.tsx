@@ -418,7 +418,7 @@ function GameTile({ onPress, gradColors, gradLocations, style, children }: {
 const BOTTOM_TABS = [
   { key: 'play', label: 'Play', emoji: '🎮', screen: null, active: true },
   { key: 'social', label: 'Social', emoji: '👥', screen: 'Friends' },
-  { key: 'shop', label: 'Shop', emoji: '🛒', screen: 'Store' },
+  { key: 'shop', label: 'Free Chips', emoji: '🎁', screen: 'Store' },
   { key: 'club', label: 'Club', emoji: '🏛️', screen: 'Clubs' },
   { key: 'more', label: 'More', emoji: '☰', screen: 'Profile' },
 ] as const;
@@ -429,7 +429,6 @@ const BOTTOM_TABS = [
 const QUICK_ACCESS = [
   { key: 'tournaments', label: 'Tourneys', emoji: '🏆', screen: 'Tournaments' },
   { key: 'private', label: 'Private', emoji: '🏠', screen: 'PrivateRooms' },
-  { key: 'bonus', label: 'Bonus', emoji: '🎁', screen: null },
   { key: 'leaderboard', label: 'Leaders', emoji: '📊', screen: null },
 ] as const;
 
@@ -807,8 +806,6 @@ export default function LobbyScreen() {
               onPress={() => {
                 if (item.screen) {
                   nav.navigate(item.screen as any);
-                } else if (item.key === 'bonus') {
-                  Alert.alert('Daily Bonus', 'Check back tomorrow for your daily reward!');
                 }
               }}
             >

@@ -4,6 +4,7 @@ import {
   Dimensions, Alert, Modal, ScrollView, RefreshControl, KeyboardAvoidingView,
   Switch, ActivityIndicator,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, shadows, wp, hp, fs, borderRadius } from '../../theme';
 import { api } from '../../services/api';
@@ -524,6 +525,7 @@ function ClubDetailView({ clubId, onBack }: { clubId: string; onBack: () => void
 // Main Screen
 
 export default function ClubScreen() {
+  const nav = useNavigation();
   const [mainTab, setMainTab] = useState<'my' | 'browse'>('my');
   const [myClubs, setMyClubs] = useState<Club[]>([]);
   const [browseClubs, setBrowseClubs] = useState<Club[]>([]);
@@ -598,12 +600,14 @@ export default function ClubScreen() {
     return <ClubDetailView clubId={selectedClubId} onBack={() => { setSelectedClubId(null); refresh(); }} />;
   }
 
-  const renderClubCard = (club: Club, isMine: boolean) => (
+  const renderClubCard = (club: Club, isMine: boolean) => {
+    const alreadyMember = !!club.myRole;
+    return (
     <TouchableOpacity
       key={club.id}
       style={s.card}
       activeOpacity={0.7}
-      onPress={() => isMine ? setSelectedClubId(club.id) : undefined}
+      onPress={() => alreadyMember ? setSelectedClubId(club.id) : undefined}
     >
       <View style={s.cardContent}>
         <View style={[s.clubIcon, { borderColor: LEVEL_COLORS[club.level] ?? colors.textSecondary }]}>
@@ -618,19 +622,23 @@ export default function ClubScreen() {
             {club.myRole ? ` · ${ROLE_LABELS[club.myRole]?.label}` : ''}
           </Text>
         </View>
-        {isMine ? (
+        {alreadyMember ? (
           <PremiumIcon name="chevron-right" size={16} />
         ) : (
           <GoldButton label="Join" small onPress={() => handleJoin(club)} />
         )}
       </View>
     </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <View style={s.container}>
       {/* Header */}
       <View style={s.header}>
+        <TouchableOpacity onPress={() => nav.goBack()} style={s.backBtn} activeOpacity={0.7}>
+          <Text style={s.backText}>‹</Text>
+        </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={s.headerTitle}>CLUBS</Text>
           <Text style={s.headerSub}>{myClubs.length} clubs joined</Text>
@@ -700,7 +708,9 @@ export default function ClubScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: wp(16) },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp(12), paddingTop: hp(28) },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp(12), paddingTop: hp(28), gap: wp(8) },
+  backBtn: { width: wp(40), height: wp(40), alignItems: 'center' as const, justifyContent: 'center' as const },
+  backText: { color: colors.primary, fontSize: fs(28), fontWeight: '300' as const },
   headerTitle: { color: '#FFF', fontSize: fs(28), fontWeight: '900', letterSpacing: 4, textShadowColor: 'rgba(212,175,55,0.4)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 },
   headerSub: { color: 'rgba(255,255,255,0.45)', fontSize: fs(12), fontWeight: '600', letterSpacing: 1, marginTop: hp(4) },
   clubDesc: { color: colors.textSecondary, fontSize: fs(13), marginBottom: hp(12), paddingHorizontal: wp(4) },
