@@ -50,6 +50,14 @@ const A = {
   panelM: require('../../../assets/game/panel_medium.png'),
   panelL: require('../../../assets/game/panel_large.png'),
   goldCoin: require('../../../assets/game/gold_coin.png'),
+  addChips: require('../../../assets/game/icon_add_chips.png'),
+  luckySpin: require('../../../assets/game/icon_lucky_spin.png'),
+  mission: require('../../../assets/game/icon_mission.png'),
+  vipBadge: require('../../../assets/game/icon_vip_badge.png'),
+  tabPlay: require('../../../assets/game/icon_tab_play.png'),
+  tabPlayActive: require('../../../assets/game/icon_tab_play_active.png'),
+  tabSocial: require('../../../assets/game/tab_social.png'),
+  tabSocialActive: require('../../../assets/game/tab_social_active.png'),
   iconSettings: require('../../../assets/icons/settings.png'),
   iconFriends: require('../../../assets/icons/friends.png'),
   iconStore: require('../../../assets/icons/store.png'),
@@ -416,10 +424,10 @@ function GameTile({ onPress, gradColors, gradLocations, style, children }: {
 // Bottom Tab Bar config
 // ---------------------------------------------------------------------------
 const BOTTOM_TABS = [
-  { key: 'social', label: 'Social', emoji: '👥', screen: 'Friends' },
-  { key: 'shop', label: 'Free Chips', emoji: '🎁', screen: 'Store' },
-  { key: 'club', label: 'Club', emoji: '🏛️', screen: 'Clubs' },
-  { key: 'more', label: 'More', emoji: '☰', screen: 'Profile' },
+  { key: 'social', label: 'Social', emoji: '👥', screen: 'Friends', icon: A.tabSocial },
+  { key: 'shop', label: 'Free Chips', emoji: '🎁', screen: 'Store', icon: null },
+  { key: 'club', label: 'Club', emoji: '🏛️', screen: 'Clubs', icon: null },
+  { key: 'more', label: 'More', emoji: '☰', screen: 'Profile', icon: null },
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -675,21 +683,17 @@ export default function LobbyScreen() {
               <Image source={A.goldCoin} style={$.topBarCoinIcon} />
               <Text style={$.topBarChipText}>{chipStr(user?.chips || 0)}</Text>
               <Animated.View style={[$.topBarAddBtn, { transform: [{ scale: plusPulse }] }]}>
-                <Text style={$.topBarAddBtnText}>+</Text>
+                <Image source={A.addChips} style={$.topBarAddBtnImg} />
               </Animated.View>
             </TouchableOpacity>
 
             {/* Right: Icon buttons row */}
             <View style={$.topBarRight}>
-              <TouchableOpacity style={$.topBarIconBtn} activeOpacity={0.7}>
-                <View style={$.iconPlaceholder}>
-                  <Text style={$.iconEmoji}>🎰</Text>
-                </View>
+              <TouchableOpacity style={$.topBarIconBtn} activeOpacity={0.7} onPress={() => nav.navigate('LuckySpin' as any)}>
+                <Image source={A.luckySpin} style={$.topBarIconImg} resizeMode="contain" />
               </TouchableOpacity>
-              <TouchableOpacity style={$.topBarIconBtn} activeOpacity={0.7}>
-                <View style={$.iconPlaceholder}>
-                  <Text style={$.iconEmoji}>🎯</Text>
-                </View>
+              <TouchableOpacity style={$.topBarIconBtn} activeOpacity={0.7} onPress={() => nav.navigate('Missions' as any)}>
+                <Image source={A.mission} style={$.topBarIconImg} resizeMode="contain" />
               </TouchableOpacity>
               <TouchableOpacity style={$.topBarIconBtn} activeOpacity={0.7} onPress={() => nav.navigate('Settings' as any)}>
                 <Image source={A.iconSettings} style={$.topBarIconImg} resizeMode="contain" />
@@ -840,7 +844,11 @@ export default function LobbyScreen() {
                 }}
               >
                 <View style={$.bottomTabIconWrap}>
-                  <Text style={$.bottomTabEmoji}>{tab.emoji}</Text>
+                  {tab.icon ? (
+                    <Image source={tab.icon} style={$.bottomTabIconImg} resizeMode="contain" />
+                  ) : (
+                    <Text style={$.bottomTabEmoji}>{tab.emoji}</Text>
+                  )}
                 </View>
                 <Text style={$.bottomTabLabel}>{tab.label}</Text>
               </TouchableOpacity>
@@ -1048,19 +1056,14 @@ const $ = StyleSheet.create({
     textShadowRadius: 6,
   },
   topBarAddBtn: {
-    width: wp(20),
-    height: wp(20),
-    borderRadius: wp(10),
-    backgroundColor: C.neonGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: wp(24),
+    height: wp(24),
     marginLeft: wp(4),
   },
-  topBarAddBtnText: {
-    color: '#FFFFFF',
-    fontSize: fs(14),
-    fontWeight: '900',
-    marginTop: -1,
+  topBarAddBtnImg: {
+    width: wp(24),
+    height: wp(24),
+    borderRadius: wp(12),
   },
 
   /* Top Bar: Right icon buttons */
@@ -1084,15 +1087,6 @@ const $ = StyleSheet.create({
     height: wp(18),
     tintColor: C.muted,
   } as any,
-
-  /* Icon placeholder for missing assets */
-  iconPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconEmoji: {
-    fontSize: fs(14),
-  },
 
   /* ═══ ZONE 1: Game Mode Buttons ═══ */
   gameModeStripWrap: {
@@ -1339,6 +1333,10 @@ const $ = StyleSheet.create({
   bottomTabEmoji: {
     fontSize: fs(18),
     opacity: 0.7,
+  },
+  bottomTabIconImg: {
+    width: wp(24),
+    height: wp(24),
   },
   bottomTabLabel: {
     color: C.muted,

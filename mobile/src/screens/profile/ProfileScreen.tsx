@@ -20,6 +20,7 @@ import PremiumIcon from '../../components/PremiumIcon';
 
 const BG_LOBBY = require('../../../assets/game/bg_lobby_main.png');
 const GOLD_COIN = require('../../../assets/game/gold_coin.png');
+const ADD_CHIPS = require('../../../assets/game/icon_add_chips.png');
 const { width: SW } = Dimensions.get('window');
 
 // ─── VIP Tiers ───
@@ -205,7 +206,7 @@ export default function ProfileScreen() {
               activeOpacity={0.7}
               onPress={() => nav.navigate('Store' as any)}
             >
-              <Text style={s.chipAddText}>+</Text>
+              <Image source={ADD_CHIPS} style={s.chipAddImg} />
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -578,21 +579,14 @@ const s = StyleSheet.create({
     letterSpacing: 0.5,
   },
   chipAddBtn: {
-    width: wp(24),
-    height: wp(24),
-    borderRadius: wp(12),
-    backgroundColor: 'rgba(212,175,55,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.35)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: wp(28),
+    height: wp(28),
     marginLeft: wp(2),
   },
-  chipAddText: {
-    color: '#D4AF37',
-    fontSize: fs(16),
-    fontWeight: '800',
-    marginTop: -1,
+  chipAddImg: {
+    width: wp(28),
+    height: wp(28),
+    borderRadius: wp(14),
   },
 
   /* ══════════════════════════════════════════════════════════
