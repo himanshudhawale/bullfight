@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, shadows, wp, hp, fs, borderRadius, gradients, spacing, glassStyle } from '../theme';
-import { PremiumIcon } from './PremiumIcon';
+import PremiumIcon from './PremiumIcon';
 import { api } from '../services/api';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
