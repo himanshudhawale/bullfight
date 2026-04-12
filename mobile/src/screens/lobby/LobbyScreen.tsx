@@ -416,7 +416,6 @@ function GameTile({ onPress, gradColors, gradLocations, style, children }: {
 // Bottom Tab Bar config
 // ---------------------------------------------------------------------------
 const BOTTOM_TABS = [
-  { key: 'play', label: 'Play', emoji: '🎮', screen: null, active: true },
   { key: 'social', label: 'Social', emoji: '👥', screen: 'Friends' },
   { key: 'shop', label: 'Free Chips', emoji: '🎁', screen: 'Store' },
   { key: 'club', label: 'Club', emoji: '🏛️', screen: 'Clubs' },
@@ -427,7 +426,6 @@ const BOTTOM_TABS = [
 // Quick Access Shortcuts
 // ---------------------------------------------------------------------------
 const QUICK_ACCESS = [
-  { key: 'tournaments', label: 'Tourneys', emoji: '🏆', screen: 'Tournaments' },
   { key: 'private', label: 'Private', emoji: '🏠', screen: 'PrivateRooms' },
   { key: 'leaderboard', label: 'Leaders', emoji: '📊', screen: null },
 ] as const;
@@ -830,27 +828,23 @@ export default function LobbyScreen() {
         >
           <View style={$.bottomTabBarTopBorder} />
           <View style={$.bottomTabBarRow}>
-            {BOTTOM_TABS.map((tab) => {
-              const isActive = tab.key === 'play';
-              return (
-                <TouchableOpacity
-                  key={tab.key}
-                  style={$.bottomTabItem}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    if (tab.screen) {
-                      nav.navigate(tab.screen as any);
-                    }
-                  }}
-                >
-                  {isActive && <View style={$.bottomTabGlow} />}
-                  <View style={[$.bottomTabIconWrap, isActive && $.bottomTabIconWrapActive]}>
-                    <Text style={[$.bottomTabEmoji, isActive && $.bottomTabEmojiActive]}>{tab.emoji}</Text>
-                  </View>
-                  <Text style={[$.bottomTabLabel, isActive && $.bottomTabLabelActive]}>{tab.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
+            {BOTTOM_TABS.map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={$.bottomTabItem}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (tab.screen) {
+                    nav.navigate(tab.screen as any);
+                  }
+                }}
+              >
+                <View style={$.bottomTabIconWrap}>
+                  <Text style={$.bottomTabEmoji}>{tab.emoji}</Text>
+                </View>
+                <Text style={$.bottomTabLabel}>{tab.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </LinearGradient>
       </Animated.View>
@@ -1336,33 +1330,15 @@ const $ = StyleSheet.create({
     minWidth: wp(52),
     position: 'relative',
   } as any,
-  bottomTabGlow: {
-    position: 'absolute',
-    top: -hp(4),
-    width: wp(40),
-    height: wp(40),
-    borderRadius: wp(20),
-    backgroundColor: 'rgba(212,175,55,0.08)',
-    ...Platform.select({
-      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 12 },
-      android: { elevation: 4 },
-    }),
-  } as any,
   bottomTabIconWrap: {
     width: wp(28),
     height: wp(28),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bottomTabIconWrapActive: {
-    // active state — gold tint applied via text style
-  },
   bottomTabEmoji: {
     fontSize: fs(18),
-    opacity: 0.5,
-  },
-  bottomTabEmojiActive: {
-    opacity: 1,
+    opacity: 0.7,
   },
   bottomTabLabel: {
     color: C.muted,
@@ -1371,12 +1347,6 @@ const $ = StyleSheet.create({
     marginTop: hp(2),
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  bottomTabLabelActive: {
-    color: C.gold,
-    textShadowColor: 'rgba(212,175,55,0.4)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 4,
   },
 
   /* ── Glassmorphism ── */
