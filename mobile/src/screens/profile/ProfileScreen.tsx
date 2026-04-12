@@ -360,7 +360,7 @@ export default function ProfileScreen() {
               onPress={() => nav.navigate('Settings' as any)}
             />
             <GradientButton
-              title="BUY CHIPS"
+              title="FREE CHIPS"
               variant="primary"
               size="md"
               style={s.actionBtnFlex}
