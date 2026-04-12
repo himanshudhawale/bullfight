@@ -17,16 +17,6 @@ import { api } from '../../services/api';
 import GradientButton from '../../components/GradientButton';
 import PremiumIcon from '../../components/PremiumIcon';
 
-// ─── VIP Tiers (mirrored from ProfileScreen) ───
-const VIP_TIERS = [
-  { level: 0, name: 'None', color: colors.textSecondary, icon: '—' },
-  { level: 1, name: 'Bronze', color: '#CD7F32', icon: 'medal3' },
-  { level: 2, name: 'Silver', color: '#C0C0C0', icon: 'medal2' },
-  { level: 3, name: 'Gold', color: '#FFD700', icon: 'medal1' },
-  { level: 4, name: 'Platinum', color: '#E5E4E2', icon: 'diamond' },
-  { level: 5, name: 'Diamond', color: '#B9F2FF', icon: 'crown' },
-];
-
 // ─── Custom Toggle ───
 function GoldToggle({ value, onToggle }: { value: boolean; onToggle: () => void }) {
   const anim = useRef(new Animated.Value(value ? 1 : 0)).current;
@@ -83,8 +73,6 @@ export default function SettingsScreen() {
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start();
   }, [fadeAnim]);
-
-  const vipTier = VIP_TIERS.find((t) => t.level === (user?.vipLevel ?? 0)) ?? VIP_TIERS[0];
 
   const handleSave = async () => {
     try {
@@ -188,14 +176,6 @@ export default function SettingsScreen() {
           {/* ═══ ACCOUNT SECTION ═══ */}
           <Text style={s.sectionTitle}>Account</Text>
           <View style={s.card}>
-            <View style={s.prefRow}>
-              <Text style={s.prefLabel}>VIP Status</Text>
-              <View style={s.vipBadge}>
-                <PremiumIcon name={vipTier.icon} size={16} />
-                <Text style={[s.vipText, { color: vipTier.color }]}>{vipTier.name}</Text>
-              </View>
-            </View>
-            <View style={s.divider} />
             <TouchableOpacity style={s.logoutRow} activeOpacity={0.6} onPress={handleLogout}>
               <Text style={s.logoutText}>Log Out</Text>
             </TouchableOpacity>
@@ -323,21 +303,6 @@ const s = StyleSheet.create({
     width: wp(20),
     height: wp(20),
     borderRadius: wp(10),
-  },
-
-  // ── VIP badge ──
-  vipBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: wp(6),
-  },
-  vipIcon: {
-    fontSize: fs(16),
-  },
-  vipText: {
-    fontSize: fs(14),
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
 
   // ── Logout ──
