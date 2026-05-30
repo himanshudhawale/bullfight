@@ -10,9 +10,9 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { CosmosClient } from '@azure/cosmos';
 
-const ADMIN_EMAIL = 'admin@bf.com';
-const ADMIN_PASSWORD = 'REMOVED';
-const ADMIN_NAME = 'Admin';
+const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@bf.com';
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
+const ADMIN_NAME = process.env.SEED_ADMIN_NAME || 'Admin';
 const CHIPS = 10_000_000; // 10 M chips
 
 async function main() {
@@ -22,6 +22,11 @@ async function main() {
 
   if (!endpoint || !key) {
     console.error('❌ Missing COSMOS_ENDPOINT or COSMOS_KEY in .env');
+    process.exit(1);
+  }
+
+  if (!ADMIN_PASSWORD) {
+    console.error('❌ Missing SEED_ADMIN_PASSWORD in .env — set a strong password before seeding.');
     process.exit(1);
   }
 
@@ -66,7 +71,7 @@ async function main() {
 
   console.log(`✅ Admin account created`);
   console.log(`   Email:    ${ADMIN_EMAIL}`);
-  console.log(`   Password: ${ADMIN_PASSWORD}`);
+  console.log('   Password: (value of SEED_ADMIN_PASSWORD env var)');
   console.log(`   Chips:    ${CHIPS.toLocaleString()}`);
   console.log(`   ID:       ${userId}`);
 }
