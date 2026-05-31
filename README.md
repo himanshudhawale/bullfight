@@ -57,10 +57,83 @@ A full-stack mobile card game for Android & iOS — featuring Bull Fight (Niu Ni
     └─────────────┘
 ```
 
-### Server-Push Pattern (DH Texas Poker style)
-- Full `game_state` snapshot only on `join_tier` (for late joiners)
-- Discrete events for ongoing play: `round_start`, `stage_change`, `countdown`, `round_result`, `bet_update`
-- Thin client — server drives all game logic, client renders state
+## Distributed Systems Design
+
+Real-money-style card games are unforgiving: every client sees the same table,
+chips must never be double-spent, and a dropped phone mid-hand can't corrupt the
+round. The backend is built around a few deliberate distributed-systems
+decisions.
+
+### Server-authoritative game loop (single source of truth)
+Clients are **thin renderers** — they never compute outcomes. The server owns the
+full game state machine (`bullfight.ts`, `pokerTable.ts`): shuffling, betting
+legality, hand evaluation, side-pots and payouts all run server-side. Clients
+only send *intents* (`place_bet`, `join_tier`) and receive authoritative results.
+This eliminates an entire class of client-trust / cheating bugs and makes the
+server the single linearization point for every mutation on a table.
+
+### Snapshot + event-delta state sync
+Instead of broadcasting full state on every change (expensive) or trusting
+clients to track it (unsafe), the protocol mixes both:
+- **Snapshot on join** — a late joiner / reconnecting client gets one full
+  `game_state` snapshot tailored to them (`game.getState(userId)` hides other
+  players' hole cards).
+- **Discrete deltas during play** — `round_start`, `stage_change`, `countdown`,
+  `round_result`, `bet_update`, `payout` carry only what changed.
+
+This is an eventual-consistency reconciliation model: a client can drop, miss a
+burst of deltas, reconnect, and re-sync from a fresh snapshot without the server
+replaying history. It keeps per-event payloads tiny while staying correct under
+packet loss and reconnection.
+
+### Room-based fan-out
+Each tier / table / tournament / club is a **Socket.IO room**. Broadcasts use
+`io.in(room).emit(...)` so a state change fans out to exactly the players at that
+table — O(table) work, not O(server). Independent rooms are isolated failure and
+concurrency domains: a stuck hand at one table can't stall another, and the
+managers (`BullfightManager`, `PokerManager`, `TournamentManager`) run each
+room's clock as its own concurrent state machine.
+
+### Authenticated, heartbeat-monitored connections
+The WebSocket handshake runs a JWT auth middleware (`io.use`) before any game
+event is accepted, so the socket's `userId` is trusted for the life of the
+connection. Socket.IO heartbeats (`pingInterval: 25s`, `pingTimeout: 10s`) detect
+half-open / dead connections and drive presence + clean seat release on
+`disconnect`.
+
+### Partition-aware data modeling (Cosmos DB)
+Data is modeled for **single-partition reads** on a horizontally-partitioned
+store. Hot read paths (a user's profile, a player's inbox) are keyed by `userId`
+as the partition key so they never trigger a cross-partition scan. Where two
+actors need the same record from their own partition — e.g. a direct message — it
+is **dual-written under both the sender's and the recipient's partition**, trading
+a little write amplification and denormalization for cheap, scalable reads. This
+is the classic distributed-database tradeoff made explicit in the schema.
+
+### Read-through caching with explicit invalidation
+The leaderboard is an expensive aggregate, so reads go through a TTL cache
+(`LEADERBOARD_TTL_MS = 60s`) and the game loop **busts the cache**
+(`invalidateLeaderboardCache()`) after each round that can change rankings —
+read-through + write-invalidate, so players see fresh standings without hammering
+the database on every request. *(Currently an in-process cache; see Scaling out.)*
+
+### Backpressure at the edge
+Express rate limiters (500 req / 15 min globally, 100 / 15 min on auth) and a
+1 MB body cap protect the shared backend from a single noisy or abusive client.
+
+### Scaling out (current state & roadmap)
+The design is intentionally ready for multi-node scale-out, with two honest
+caveats about the present implementation:
+- **Game rooms hold authoritative state in memory** on the node that owns them,
+  so today the server runs as a single authoritative node (vertically scaled).
+  Sharding rooms across nodes (consistent-hash a `tableId` → node) or moving room
+  state into a shared store is the natural next step.
+- **Fan-out and the leaderboard cache are in-process.** Running multiple
+  Socket.IO instances behind Azure Container Apps requires a shared pub/sub
+  backplane (e.g. the Socket.IO Redis adapter) so `io.in(room).emit` reaches
+  sockets on other nodes, and a shared cache (Azure Cache for Redis) for
+  cross-node invalidation. The architecture diagram above shows this target
+  topology.
 
 ## Tech Stack
 
